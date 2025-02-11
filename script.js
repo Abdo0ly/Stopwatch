@@ -1,6 +1,6 @@
 // Notion API Configuration
 const NOTION_API_KEY = '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'; // استبدل بهذا المفتاح
-const NOTION_DATABASE_ID = 'YOUR_DATABASE_ID'; // استبدل بمعرف قاعدة البيانات الخاصة بك
+const NOTION_DATABASE_ID = '197ccd4f9d9f80a5a76ddedbdab0efec'; // استبدل بمعرف قاعدة البيانات الخاصة بك
 
 // DOM Elements
 const taskTabs = document.querySelectorAll('.task-tab');
