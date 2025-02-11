@@ -1,3 +1,7 @@
+// Notion API Configuration
+const NOTION_API_KEY = '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'; // استبدل بهذا المفتاح
+const NOTION_DATABASE_ID = 'YOUR_DATABASE_ID'; // استبدل بمعرف قاعدة البيانات الخاصة بك
+
 // DOM Elements
 const taskTabs = document.querySelectorAll('.task-tab');
 const taskName = document.querySelector('.task-name');
@@ -44,9 +48,10 @@ function updateStopwatch() {
 function toggleStopwatch() {
   if (!isRunning) {
     startTime = Date.now() - elapsedTime;
-    interval = setInterval(() => {
+    interval = setInterval(async () => {
       elapsedTime = Date.now() - startTime;
       updateStopwatch();
+      await updateTimeInNotion(tasks[currentTaskIndex].name, stopwatch.textContent, 'PAGE_ID'); // استبدل PAGE_ID بمعرف الصفحة
     }, 1000);
     startPauseBtn.textContent = 'Pause';
   } else {
@@ -68,6 +73,7 @@ function confirmReset() {
   isRunning = false;
   startPauseBtn.textContent = 'Start';
   tasks[currentTaskIndex].time = 0;
+  updateTimeInNotion(tasks[currentTaskIndex].name, '00:00:00', 'PAGE_ID'); // إعادة تعيين الوقت في Notion
   resetModal.style.display = 'none';
 }
 
@@ -77,17 +83,18 @@ function cancelReset() {
 
 // Edit Task Name
 function editTaskName() {
-  newTaskNameInput.value = tasks[currentTaskIndex].name; // Show current task name
+  newTaskNameInput.value = tasks[currentTaskIndex].name; // عرض اسم التاسك الحالي
   editModal.style.display = 'flex';
 }
 
 // Save Edited Task Name
-function saveTaskName() {
+async function saveTaskName() {
   const newName = newTaskNameInput.value.trim();
   if (newName) {
     tasks[currentTaskIndex].name = newName;
     taskName.textContent = newName;
     taskTabs[currentTaskIndex].textContent = newName;
+    await updateTaskNameInNotion(tasks[currentTaskIndex].name, 'PAGE_ID'); // تحديث اسم التاسك في Notion
     editModal.style.display = 'none';
   }
 }
@@ -117,29 +124,136 @@ function closeReport() {
 
 // Switch Task
 function switchTask(index) {
-  // Save current task time
+  // حفظ وقت التاسك الحالي
   tasks[currentTaskIndex].time = elapsedTime;
 
-  // Switch to new task
+  // التبديل إلى التاسك الجديد
   currentTaskIndex = index;
   taskName.textContent = tasks[currentTaskIndex].name;
   elapsedTime = tasks[currentTaskIndex].time;
   updateStopwatch();
 
-  // Reset stopwatch state
+  // إعادة تعيين حالة الـ Stopwatch
   clearInterval(interval);
   isRunning = false;
   startPauseBtn.textContent = 'Start';
 
-  // Update active tab
+  // تحديث علامة التبويب النشطة
   taskTabs.forEach((tab, i) => {
     tab.classList.toggle('active', i === index);
   });
 
-  // Hide all modals
+  // إخفاء جميع النوافذ
   resetModal.style.display = 'none';
   editModal.style.display = 'none';
   reportModal.style.display = 'none';
+}
+
+// Function to update time in Notion
+async function updateTimeInNotion(taskName, time, pageId) {
+  // البحث عن الصف الحالي
+  const response = await fetch(`https://api.notion.com/v1/databases/${NOTION_DATABASE_ID}/query`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${NOTION_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Notion-Version': '2022-06-28',
+    },
+    body: JSON.stringify({
+      filter: {
+        and: [
+          { property: 'Task Name', title: { equals: taskName } },
+          { property: 'Page ID', rich_text: { equals: pageId } },
+        ],
+      },
+    }),
+  });
+
+  const data = await response.json();
+  if (data.results.length > 0) {
+    // إذا وجد الصف، قم بتحديثه
+    const pageIdToUpdate = data.results[0].id;
+    await fetch(`https://api.notion.com/v1/pages/${pageIdToUpdate}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${NOTION_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': '2022-06-28',
+      },
+      body: JSON.stringify({
+        properties: {
+          'Time': { rich_text: [{ text: { content: time } }] },
+        },
+      }),
+    });
+  } else {
+    // إذا لم يوجد الصف، قم بإضافته
+    await sendToNotion(taskName, time, pageId);
+  }
+}
+
+// Function to update task name in Notion
+async function updateTaskNameInNotion(taskName, pageId) {
+  // البحث عن الصف الحالي
+  const response = await fetch(`https://api.notion.com/v1/databases/${NOTION_DATABASE_ID}/query`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${NOTION_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Notion-Version': '2022-06-28',
+    },
+    body: JSON.stringify({
+      filter: {
+        and: [
+          { property: 'Task Name', title: { equals: tasks[currentTaskIndex].name } },
+          { property: 'Page ID', rich_text: { equals: pageId } },
+        ],
+      },
+    }),
+  });
+
+  const data = await response.json();
+  if (data.results.length > 0) {
+    // إذا وجد الصف، قم بتحديثه
+    const pageIdToUpdate = data.results[0].id;
+    await fetch(`https://api.notion.com/v1/pages/${pageIdToUpdate}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${NOTION_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': '2022-06-28',
+      },
+      body: JSON.stringify({
+        properties: {
+          'Task Name': { title: [{ text: { content: taskName } }] },
+        },
+      }),
+    });
+  }
+}
+
+// Function to send data to Notion
+async function sendToNotion(taskName, time, pageId) {
+  const response = await fetch('https://api.notion.com/v1/pages', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${NOTION_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Notion-Version': '2022-06-28',
+    },
+    body: JSON.stringify({
+      parent: { database_id: NOTION_DATABASE_ID },
+      properties: {
+        'Task Name': { title: [{ text: { content: taskName } }] },
+        'Time': { rich_text: [{ text: { content: time } }] },
+        'Page ID': { rich_text: [{ text: { content: pageId } }] },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    console.error('Failed to send data to Notion:', await response.text());
+  }
 }
 
 // Event Listeners
