@@ -1,7 +1,6 @@
 // Notion API Configuration
-const NOTION_API_KEY = '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'; // استبدل بهذا المفتاح
+const NOTION_API_KEY = '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'; // استبدل بAPI Key الخاص بك
 const NOTION_DATABASE_ID = '197ccd4f9d9f80a5a76ddedbdab0efec'; // استبدل بمعرف قاعدة البيانات الخاصة بك
-const PAGE_ID = '197ccd4f9d9f801a9c76eddbe3b906f1';
 
 // DOM Elements
 const taskTabs = document.querySelectorAll('.task-tab');
@@ -52,7 +51,7 @@ function toggleStopwatch() {
     interval = setInterval(async () => {
       elapsedTime = Date.now() - startTime;
       updateStopwatch();
-      await updateTimeInNotion(tasks[currentTaskIndex].name, stopwatch.textContent, 'PAGE_ID'); // استبدل PAGE_ID بمعرف الصفحة
+      await updateTimeInNotion(tasks[currentTaskIndex].name, stopwatch.textContent); // تحديث الوقت في Notion
     }, 1000);
     startPauseBtn.textContent = 'Pause';
   } else {
@@ -74,7 +73,7 @@ function confirmReset() {
   isRunning = false;
   startPauseBtn.textContent = 'Start';
   tasks[currentTaskIndex].time = 0;
-  updateTimeInNotion(tasks[currentTaskIndex].name, '00:00:00', 'PAGE_ID'); // إعادة تعيين الوقت في Notion
+  updateTimeInNotion(tasks[currentTaskIndex].name, '00:00:00'); // إعادة تعيين الوقت في Notion
   resetModal.style.display = 'none';
 }
 
@@ -95,7 +94,7 @@ async function saveTaskName() {
     tasks[currentTaskIndex].name = newName;
     taskName.textContent = newName;
     taskTabs[currentTaskIndex].textContent = newName;
-    await updateTaskNameInNotion(tasks[currentTaskIndex].name, 'PAGE_ID'); // تحديث اسم التاسك في Notion
+    await updateTaskNameInNotion(tasks[currentTaskIndex].name); // تحديث اسم التاسك في Notion
     editModal.style.display = 'none';
   }
 }
@@ -151,7 +150,7 @@ function switchTask(index) {
 }
 
 // Function to update time in Notion
-async function updateTimeInNotion(taskName, time, pageId) {
+async function updateTimeInNotion(taskName, time) {
   // البحث عن الصف الحالي
   const response = await fetch(`https://api.notion.com/v1/databases/${NOTION_DATABASE_ID}/query`, {
     method: 'POST',
@@ -162,10 +161,8 @@ async function updateTimeInNotion(taskName, time, pageId) {
     },
     body: JSON.stringify({
       filter: {
-        and: [
-          { property: 'Task Name', title: { equals: taskName } },
-          { property: 'Page ID', rich_text: { equals: pageId } },
-        ],
+        property: 'Task Name',
+        title: { equals: taskName },
       },
     }),
   });
@@ -189,12 +186,12 @@ async function updateTimeInNotion(taskName, time, pageId) {
     });
   } else {
     // إذا لم يوجد الصف، قم بإضافته
-    await sendToNotion(taskName, time, pageId);
+    await sendToNotion(taskName, time);
   }
 }
 
 // Function to update task name in Notion
-async function updateTaskNameInNotion(taskName, pageId) {
+async function updateTaskNameInNotion(taskName) {
   // البحث عن الصف الحالي
   const response = await fetch(`https://api.notion.com/v1/databases/${NOTION_DATABASE_ID}/query`, {
     method: 'POST',
@@ -205,10 +202,8 @@ async function updateTaskNameInNotion(taskName, pageId) {
     },
     body: JSON.stringify({
       filter: {
-        and: [
-          { property: 'Task Name', title: { equals: tasks[currentTaskIndex].name } },
-          { property: 'Page ID', rich_text: { equals: pageId } },
-        ],
+        property: 'Task Name',
+        title: { equals: tasks[currentTaskIndex].name },
       },
     }),
   });
@@ -234,7 +229,7 @@ async function updateTaskNameInNotion(taskName, pageId) {
 }
 
 // Function to send data to Notion
-async function sendToNotion(taskName, time, pageId) {
+async function sendToNotion(taskName, time) {
   const response = await fetch('https://api.notion.com/v1/pages', {
     method: 'POST',
     headers: {
@@ -247,7 +242,6 @@ async function sendToNotion(taskName, time, pageId) {
       properties: {
         'Task Name': { title: [{ text: { content: taskName } }] },
         'Time': { rich_text: [{ text: { content: time } }] },
-        'Page ID': { rich_text: [{ text: { content: pageId } }] },
       },
     }),
   });
