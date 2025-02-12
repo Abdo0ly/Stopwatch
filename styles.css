@@ -39,10 +39,9 @@ body {
   margin: 5px 0;
   cursor: pointer;
   width: 100%;
-  text-align: left;
+  text-align: right;
   border-radius: 5px;
   transition: background 0.3s;
-  position: relative;
 }
 
 .sidebar .task-tab.active {
