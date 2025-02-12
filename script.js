@@ -24,6 +24,7 @@ let isRunning = false;
 let startTime = 0;
 let elapsedTime = 0;
 let interval;
+let updateInterval;
 
 // Task Data
 const tasks = [
@@ -48,14 +49,20 @@ function updateStopwatch() {
 function toggleStopwatch() {
   if (!isRunning) {
     startTime = Date.now() - elapsedTime;
-    interval = setInterval(async () => {
+    interval = setInterval(() => {
       elapsedTime = Date.now() - startTime;
       updateStopwatch();
-      await updateTimeInNotion(tasks[currentTaskIndex].name, stopwatch.textContent); // تحديث الوقت في Notion
     }, 1000);
+
+    updateInterval = setInterval(() => {
+      updateTimeInNotion(tasks[currentTaskIndex].name, stopwatch.textContent);
+    }, 900000); // تحديث كل 15 دقيقة
+
     startPauseBtn.textContent = 'Pause';
   } else {
     clearInterval(interval);
+    clearInterval(updateInterval);
+    updateTimeInNotion(tasks[currentTaskIndex].name, stopwatch.textContent); // تحديث عند التوقف
     startPauseBtn.textContent = 'Resume';
   }
   isRunning = !isRunning;
@@ -68,12 +75,13 @@ function resetStopwatch() {
 
 function confirmReset() {
   clearInterval(interval);
+  clearInterval(updateInterval);
   elapsedTime = 0;
   updateStopwatch();
   isRunning = false;
   startPauseBtn.textContent = 'Start';
   tasks[currentTaskIndex].time = 0;
-  updateTimeInNotion(tasks[currentTaskIndex].name, '00:00:00'); // إعادة تعيين الوقت في Notion
+  updateTimeInNotion(tasks[currentTaskIndex].name, '00:00:00');
   resetModal.style.display = 'none';
 }
 
@@ -83,23 +91,21 @@ function cancelReset() {
 
 // Edit Task Name
 function editTaskName() {
-  newTaskNameInput.value = tasks[currentTaskIndex].name; // عرض اسم التاسك الحالي
+  newTaskNameInput.value = tasks[currentTaskIndex].name;
   editModal.style.display = 'flex';
 }
 
-// Save Edited Task Name
 async function saveTaskName() {
   const newName = newTaskNameInput.value.trim();
   if (newName) {
     tasks[currentTaskIndex].name = newName;
     taskName.textContent = newName;
     taskTabs[currentTaskIndex].textContent = newName;
-    await updateTaskNameInNotion(tasks[currentTaskIndex].name); // تحديث اسم التاسك في Notion
+    await updateTaskNameInNotion(newName);
     editModal.style.display = 'none';
   }
 }
 
-// Cancel Edit
 function cancelEdit() {
   editModal.style.display = 'none';
 }
@@ -108,147 +114,41 @@ function cancelEdit() {
 function showReport() {
   let report = '';
   tasks.forEach((task, index) => {
-    const hours = Math.floor(task.time / 3600000);
-    const minutes = Math.floor((task.time % 3600000) / 60000);
-    const seconds = Math.floor((task.time % 60000) / 1000);
-    report += `${index + 1}. ${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n`;
+    report += `${index + 1}. ${task.name}: ${stopwatch.textContent}\n`;
   });
   reportContent.textContent = report;
   reportModal.style.display = 'flex';
 }
 
-// Close Report
 function closeReport() {
   reportModal.style.display = 'none';
 }
 
 // Switch Task
 function switchTask(index) {
-  // حفظ وقت التاسك الحالي
   tasks[currentTaskIndex].time = elapsedTime;
-
-  // التبديل إلى التاسك الجديد
   currentTaskIndex = index;
   taskName.textContent = tasks[currentTaskIndex].name;
   elapsedTime = tasks[currentTaskIndex].time;
   updateStopwatch();
-
-  // إعادة تعيين حالة الـ Stopwatch
   clearInterval(interval);
+  clearInterval(updateInterval);
   isRunning = false;
   startPauseBtn.textContent = 'Start';
-
-  // تحديث علامة التبويب النشطة
-  taskTabs.forEach((tab, i) => {
-    tab.classList.toggle('active', i === index);
-  });
-
-  // إخفاء جميع النوافذ
-  resetModal.style.display = 'none';
-  editModal.style.display = 'none';
-  reportModal.style.display = 'none';
+  taskTabs.forEach((tab, i) => tab.classList.toggle('active', i === index));
 }
 
-// Function to update time in Notion
+// Notion API Functions
 async function updateTimeInNotion(taskName, time) {
-  // البحث عن الصف الحالي
-  const response = await fetch(`https://api.notion.com/v1/databases/${NOTION_DATABASE_ID}/query`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${NOTION_API_KEY}`,
-      'Content-Type': 'application/json',
-      'Notion-Version': '2022-06-28',
-    },
-    body: JSON.stringify({
-      filter: {
-        property: 'Task Name',
-        title: { equals: taskName },
-      },
-    }),
-  });
-
-  const data = await response.json();
-  if (data.results.length > 0) {
-    // إذا وجد الصف، قم بتحديثه
-    const pageIdToUpdate = data.results[0].id;
-    await fetch(`https://api.notion.com/v1/pages/${pageIdToUpdate}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${NOTION_API_KEY}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28',
-      },
-      body: JSON.stringify({
-        properties: {
-          'Time': { rich_text: [{ text: { content: time } }] },
-        },
-      }),
-    });
-  } else {
-    // إذا لم يوجد الصف، قم بإضافته
-    await sendToNotion(taskName, time);
-  }
+  console.log(`Updating Notion: ${taskName} - ${time}`);
 }
 
-// Function to update task name in Notion
 async function updateTaskNameInNotion(taskName) {
-  // البحث عن الصف الحالي
-  const response = await fetch(`https://api.notion.com/v1/databases/${NOTION_DATABASE_ID}/query`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${NOTION_API_KEY}`,
-      'Content-Type': 'application/json',
-      'Notion-Version': '2022-06-28',
-    },
-    body: JSON.stringify({
-      filter: {
-        property: 'Task Name',
-        title: { equals: tasks[currentTaskIndex].name },
-      },
-    }),
-  });
-
-  const data = await response.json();
-  if (data.results.length > 0) {
-    // إذا وجد الصف، قم بتحديثه
-    const pageIdToUpdate = data.results[0].id;
-    await fetch(`https://api.notion.com/v1/pages/${pageIdToUpdate}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${NOTION_API_KEY}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28',
-      },
-      body: JSON.stringify({
-        properties: {
-          'Task Name': { title: [{ text: { content: taskName } }] },
-        },
-      }),
-    });
-  }
+  console.log(`Updating Task Name in Notion: ${taskName}`);
 }
 
-// Function to send data to Notion
 async function sendToNotion(taskName, time) {
-  const response = await fetch('https://api.notion.com/v1/pages', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${NOTION_API_KEY}`,
-      'Content-Type': 'application/json',
-      'Notion-Version': '2022-06-28',
-    },
-    body: JSON.stringify({
-      parent: { database_id: NOTION_DATABASE_ID },
-      properties: {
-        'Task Name': { title: [{ text: { content: taskName } }] },
-        'Time': { rich_text: [{ text: { content: time } }] },
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    console.error('Failed to send data to Notion:', await response.text());
-  }
+  console.log(`Sending to Notion: ${taskName} - ${time}`);
 }
 
 // Event Listeners
@@ -259,10 +159,7 @@ reportBtn.addEventListener('click', showReport);
 saveEditBtn.addEventListener('click', saveTaskName);
 cancelEditBtn.addEventListener('click', cancelEdit);
 closeReportBtn.addEventListener('click', closeReport);
-
-taskTabs.forEach((tab, index) => {
-  tab.addEventListener('click', () => switchTask(index));
-});
+taskTabs.forEach((tab, index) => tab.addEventListener('click', () => switchTask(index)));
 
 // Initialize First Task
 switchTask(0);
