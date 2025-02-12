@@ -67,6 +67,9 @@ function markTaskDone() {
     startPauseBtn.textContent = 'Start';
   }
   tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
+  tasks[currentTaskIndex].time += elapsedTime; // إضافة الوقت المنقضي إلى الوقت الإجمالي
+  elapsedTime = 0; // إعادة تعيين الوقت المنقضي
+  updateStopwatch();
   showReport();
 }
 
@@ -117,11 +120,13 @@ function cancelEdit() {
 function showReport() {
   reportDate.textContent = new Date().toLocaleDateString('ar-EG');
   let report = '';
-  tasks.forEach((task, index) => {
-    const hours = Math.floor(task.time / 3600000);
-    const minutes = Math.floor((task.time % 3600000) / 60000);
-    const seconds = Math.floor((task.time % 60000) / 1000);
-    report += `${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n${task.startTime || 'N/A'} - ${task.endTime || 'N/A'}\n\n`;
+  tasks.forEach((task) => {
+    if (task.time > 0) { // عرض المهام التي تم العمل عليها فقط
+      const hours = Math.floor(task.time / 3600000);
+      const minutes = Math.floor((task.time % 3600000) / 60000);
+      const seconds = Math.floor((task.time % 60000) / 1000);
+      report += `${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n${task.startTime || 'N/A'} - ${task.endTime || 'N/A'}\n\n`;
+    }
   });
   reportContent.textContent = report;
   reportModal.style.display = 'flex';
@@ -134,7 +139,6 @@ function closeReport() {
 
 // Switch Task
 function switchTask(index) {
-  tasks[currentTaskIndex].time = elapsedTime;
   currentTaskIndex = index;
   taskName.textContent = tasks[currentTaskIndex].name;
   elapsedTime = tasks[currentTaskIndex].time;
