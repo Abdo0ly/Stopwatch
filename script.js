@@ -1,13 +1,9 @@
-// Google Sheets API Configuration
-const SHEET_ID = '1GsoLzgAwDDNTZPtjbP24VxDeWSiC0msSJHvP_kZBw8o'; // استبدل بمعرف الجدول الخاص بك
-const API_KEY = 'AIzaSyA1TGjduvZUC00hS4F1k35Vo6VuqvjM650'; // استبدل بAPI Key الخاص بك
-const SHEET_NAME = 'Sheet1'; // اسم الورقة في الجدول
-
 // DOM Elements
 const taskTabs = document.querySelectorAll('.task-tab');
 const taskName = document.querySelector('.task-name');
 const stopwatch = document.querySelector('.stopwatch');
 const startPauseBtn = document.querySelector('.start-pause');
+const doneBtn = document.querySelector('.done');
 const resetBtn = document.querySelector('.reset');
 const editBtn = document.querySelector('.edit');
 const reportBtn = document.querySelector('.report');
@@ -19,6 +15,7 @@ const cancelEditBtn = document.getElementById('cancel-edit');
 const reportModal = document.getElementById('report-modal');
 const reportContent = document.getElementById('report-content');
 const closeReportBtn = document.getElementById('close-report');
+const reportDate = document.getElementById('report-date');
 
 // Stopwatch Variables
 let isRunning = false;
@@ -28,11 +25,11 @@ let interval;
 
 // Task Data
 const tasks = [
-  { name: 'Task 1', time: 0 },
-  { name: 'Task 2', time: 0 },
-  { name: 'Task 3', time: 0 },
-  { name: 'Task 4', time: 0 },
-  { name: 'Task 5', time: 0 },
+  { name: 'Task 1', time: 0, startTime: null, endTime: null },
+  { name: 'Task 2', time: 0, startTime: null, endTime: null },
+  { name: 'Task 3', time: 0, startTime: null, endTime: null },
+  { name: 'Task 4', time: 0, startTime: null, endTime: null },
+  { name: 'Task 5', time: 0, startTime: null, endTime: null },
 ];
 
 let currentTaskIndex = 0;
@@ -54,6 +51,7 @@ function toggleStopwatch() {
       updateStopwatch();
     }, 1000);
     startPauseBtn.textContent = 'Pause';
+    tasks[currentTaskIndex].startTime = new Date().toLocaleString();
   } else {
     clearInterval(interval);
     startPauseBtn.textContent = 'Resume';
@@ -61,19 +59,32 @@ function toggleStopwatch() {
   isRunning = !isRunning;
 }
 
+// Done Button
+function markTaskDone() {
+  if (isRunning) {
+    clearInterval(interval);
+    isRunning = false;
+    startPauseBtn.textContent = 'Start';
+  }
+  tasks[currentTaskIndex].endTime = new Date().toLocaleString();
+  updateTaskTimes();
+}
+
 // Reset Stopwatch
 function resetStopwatch() {
   resetModal.style.display = 'flex';
 }
 
-async function confirmReset() {
+function confirmReset() {
   clearInterval(interval);
   elapsedTime = 0;
   updateStopwatch();
   isRunning = false;
   startPauseBtn.textContent = 'Start';
   tasks[currentTaskIndex].time = 0;
-  await updateTimeInSheet(tasks[currentTaskIndex].name, '00:00:00'); // إرسال البيانات عند التصفير
+  tasks[currentTaskIndex].startTime = null;
+  tasks[currentTaskIndex].endTime = null;
+  updateTaskTimes();
   resetModal.style.display = 'none';
 }
 
@@ -83,18 +94,17 @@ function cancelReset() {
 
 // Edit Task Name
 function editTaskName() {
-  newTaskNameInput.value = tasks[currentTaskIndex].name; // عرض اسم التاسك الحالي
+  newTaskNameInput.value = tasks[currentTaskIndex].name;
   editModal.style.display = 'flex';
 }
 
 // Save Edited Task Name
-async function saveTaskName() {
+function saveTaskName() {
   const newName = newTaskNameInput.value.trim();
   if (newName) {
     tasks[currentTaskIndex].name = newName;
     taskName.textContent = newName;
     taskTabs[currentTaskIndex].textContent = newName;
-    await updateTaskNameInSheet(tasks[currentTaskIndex].name); // إرسال البيانات عند تعديل الاسم
     editModal.style.display = 'none';
   }
 }
@@ -105,17 +115,17 @@ function cancelEdit() {
 }
 
 // Show Report
-async function showReport() {
+function showReport() {
+  reportDate.textContent = new Date().toLocaleDateString();
   let report = '';
   tasks.forEach((task, index) => {
     const hours = Math.floor(task.time / 3600000);
     const minutes = Math.floor((task.time % 3600000) / 60000);
     const seconds = Math.floor((task.time % 60000) / 1000);
-    report += `${index + 1}. ${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n`;
+    report += `${index + 1}. ${task.name}:\n   Start: ${task.startTime || 'N/A'}\n   End: ${task.endTime || 'N/A'}\n   Time: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n\n`;
   });
   reportContent.textContent = report;
   reportModal.style.display = 'flex';
-  await updateTimeInSheet(tasks[currentTaskIndex].name, stopwatch.textContent); // إرسال البيانات عند عرض التقرير
 }
 
 // Close Report
@@ -125,67 +135,34 @@ function closeReport() {
 
 // Switch Task
 function switchTask(index) {
-  // حفظ وقت التاسك الحالي
   tasks[currentTaskIndex].time = elapsedTime;
-
-  // التبديل إلى التاسك الجديد
   currentTaskIndex = index;
   taskName.textContent = tasks[currentTaskIndex].name;
   elapsedTime = tasks[currentTaskIndex].time;
   updateStopwatch();
-
-  // إعادة تعيين حالة الـ Stopwatch
   clearInterval(interval);
   isRunning = false;
   startPauseBtn.textContent = 'Start';
-
-  // تحديث علامة التبويب النشطة
   taskTabs.forEach((tab, i) => {
     tab.classList.toggle('active', i === index);
   });
-
-  // إخفاء جميع النوافذ
   resetModal.style.display = 'none';
   editModal.style.display = 'none';
   reportModal.style.display = 'none';
+  updateTaskTimes();
 }
 
-// Function to update time in Google Sheets
-async function updateTimeInSheet(taskName, time) {
-  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A1:append?valueInputOption=RAW&key=${API_KEY}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      values: [[taskName, time]],
-    }),
+// Update Task Times in Sidebar
+function updateTaskTimes() {
+  taskTabs.forEach((tab, index) => {
+    const task = tasks[index];
+    tab.innerHTML = `${task.name}<div class="task-time">${task.startTime ? `Start: ${task.startTime}` : ''}<br>${task.endTime ? `End: ${task.endTime}` : ''}</div>`;
   });
-
-  if (!response.ok) {
-    console.error('Failed to update time in Google Sheets:', await response.text());
-  }
-}
-
-// Function to update task name in Google Sheets
-async function updateTaskNameInSheet(taskName) {
-  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A1:append?valueInputOption=RAW&key=${API_KEY}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      values: [[taskName, '']],
-    }),
-  });
-
-  if (!response.ok) {
-    console.error('Failed to update task name in Google Sheets:', await response.text());
-  }
 }
 
 // Event Listeners
 startPauseBtn.addEventListener('click', toggleStopwatch);
+doneBtn.addEventListener('click', markTaskDone);
 resetBtn.addEventListener('click', resetStopwatch);
 editBtn.addEventListener('click', editTaskName);
 reportBtn.addEventListener('click', showReport);
