@@ -1,6 +1,7 @@
-// Notion API Configuration
-const NOTION_API_KEY = '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'; // استبدل بAPI Key الخاص بك
-const NOTION_DATABASE_ID = '197ccd4f9d9f80a5a76ddedbdab0efec'; // استبدل بمعرف قاعدة البيانات الخاصة بك
+// Google Sheets API Configuration
+const SHEET_ID = '1GsoLzgAwDDNTZPtjbP24VxDeWSiC0msSJHvP_kZBw8o'; // استبدل بمعرف الجدول الخاص بك
+const API_KEY = 'AIzaSyA1TGjduvZUC00hS4F1k35Vo6VuqvjM650'; // استبدل بAPI Key الخاص بك
+const SHEET_NAME = 'Sheet1'; // اسم الورقة في الجدول
 
 // DOM Elements
 const taskTabs = document.querySelectorAll('.task-tab');
@@ -24,7 +25,6 @@ let isRunning = false;
 let startTime = 0;
 let elapsedTime = 0;
 let interval;
-let updateInterval;
 
 // Task Data
 const tasks = [
@@ -53,16 +53,9 @@ function toggleStopwatch() {
       elapsedTime = Date.now() - startTime;
       updateStopwatch();
     }, 1000);
-
-    updateInterval = setInterval(() => {
-      updateTimeInNotion(tasks[currentTaskIndex].name, stopwatch.textContent);
-    }, 900000); // تحديث كل 15 دقيقة
-
     startPauseBtn.textContent = 'Pause';
   } else {
     clearInterval(interval);
-    clearInterval(updateInterval);
-    updateTimeInNotion(tasks[currentTaskIndex].name, stopwatch.textContent); // تحديث عند التوقف
     startPauseBtn.textContent = 'Resume';
   }
   isRunning = !isRunning;
@@ -73,15 +66,14 @@ function resetStopwatch() {
   resetModal.style.display = 'flex';
 }
 
-function confirmReset() {
+async function confirmReset() {
   clearInterval(interval);
-  clearInterval(updateInterval);
   elapsedTime = 0;
   updateStopwatch();
   isRunning = false;
   startPauseBtn.textContent = 'Start';
   tasks[currentTaskIndex].time = 0;
-  updateTimeInNotion(tasks[currentTaskIndex].name, '00:00:00');
+  await updateTimeInSheet(tasks[currentTaskIndex].name, '00:00:00'); // إرسال البيانات عند التصفير
   resetModal.style.display = 'none';
 }
 
@@ -91,64 +83,105 @@ function cancelReset() {
 
 // Edit Task Name
 function editTaskName() {
-  newTaskNameInput.value = tasks[currentTaskIndex].name;
+  newTaskNameInput.value = tasks[currentTaskIndex].name; // عرض اسم التاسك الحالي
   editModal.style.display = 'flex';
 }
 
+// Save Edited Task Name
 async function saveTaskName() {
   const newName = newTaskNameInput.value.trim();
   if (newName) {
     tasks[currentTaskIndex].name = newName;
     taskName.textContent = newName;
     taskTabs[currentTaskIndex].textContent = newName;
-    await updateTaskNameInNotion(newName);
+    await updateTaskNameInSheet(tasks[currentTaskIndex].name); // إرسال البيانات عند تعديل الاسم
     editModal.style.display = 'none';
   }
 }
 
+// Cancel Edit
 function cancelEdit() {
   editModal.style.display = 'none';
 }
 
 // Show Report
-function showReport() {
+async function showReport() {
   let report = '';
   tasks.forEach((task, index) => {
-    report += `${index + 1}. ${task.name}: ${stopwatch.textContent}\n`;
+    const hours = Math.floor(task.time / 3600000);
+    const minutes = Math.floor((task.time % 3600000) / 60000);
+    const seconds = Math.floor((task.time % 60000) / 1000);
+    report += `${index + 1}. ${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n`;
   });
   reportContent.textContent = report;
   reportModal.style.display = 'flex';
+  await updateTimeInSheet(tasks[currentTaskIndex].name, stopwatch.textContent); // إرسال البيانات عند عرض التقرير
 }
 
+// Close Report
 function closeReport() {
   reportModal.style.display = 'none';
 }
 
 // Switch Task
 function switchTask(index) {
+  // حفظ وقت التاسك الحالي
   tasks[currentTaskIndex].time = elapsedTime;
+
+  // التبديل إلى التاسك الجديد
   currentTaskIndex = index;
   taskName.textContent = tasks[currentTaskIndex].name;
   elapsedTime = tasks[currentTaskIndex].time;
   updateStopwatch();
+
+  // إعادة تعيين حالة الـ Stopwatch
   clearInterval(interval);
-  clearInterval(updateInterval);
   isRunning = false;
   startPauseBtn.textContent = 'Start';
-  taskTabs.forEach((tab, i) => tab.classList.toggle('active', i === index));
+
+  // تحديث علامة التبويب النشطة
+  taskTabs.forEach((tab, i) => {
+    tab.classList.toggle('active', i === index);
+  });
+
+  // إخفاء جميع النوافذ
+  resetModal.style.display = 'none';
+  editModal.style.display = 'none';
+  reportModal.style.display = 'none';
 }
 
-// Notion API Functions
-async function updateTimeInNotion(taskName, time) {
-  console.log(`Updating Notion: ${taskName} - ${time}`);
+// Function to update time in Google Sheets
+async function updateTimeInSheet(taskName, time) {
+  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A1:append?valueInputOption=RAW&key=${API_KEY}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      values: [[taskName, time]],
+    }),
+  });
+
+  if (!response.ok) {
+    console.error('Failed to update time in Google Sheets:', await response.text());
+  }
 }
 
-async function updateTaskNameInNotion(taskName) {
-  console.log(`Updating Task Name in Notion: ${taskName}`);
-}
+// Function to update task name in Google Sheets
+async function updateTaskNameInSheet(taskName) {
+  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A1:append?valueInputOption=RAW&key=${API_KEY}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      values: [[taskName, '']],
+    }),
+  });
 
-async function sendToNotion(taskName, time) {
-  console.log(`Sending to Notion: ${taskName} - ${time}`);
+  if (!response.ok) {
+    console.error('Failed to update task name in Google Sheets:', await response.text());
+  }
 }
 
 // Event Listeners
@@ -159,7 +192,10 @@ reportBtn.addEventListener('click', showReport);
 saveEditBtn.addEventListener('click', saveTaskName);
 cancelEditBtn.addEventListener('click', cancelEdit);
 closeReportBtn.addEventListener('click', closeReport);
-taskTabs.forEach((tab, index) => tab.addEventListener('click', () => switchTask(index)));
+
+taskTabs.forEach((tab, index) => {
+  tab.addEventListener('click', () => switchTask(index));
+});
 
 // Initialize First Task
 switchTask(0);
