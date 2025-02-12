@@ -51,7 +51,7 @@ function toggleStopwatch() {
       updateStopwatch();
     }, 1000);
     startPauseBtn.textContent = 'Pause';
-    tasks[currentTaskIndex].startTime = new Date().toLocaleString();
+    tasks[currentTaskIndex].startTime = new Date().toLocaleString('en-GB', { hour12: false });
   } else {
     clearInterval(interval);
     startPauseBtn.textContent = 'Resume';
@@ -66,7 +66,7 @@ function markTaskDone() {
     isRunning = false;
     startPauseBtn.textContent = 'Start';
   }
-  tasks[currentTaskIndex].endTime = new Date().toLocaleString();
+  tasks[currentTaskIndex].endTime = new Date().toLocaleString('en-GB', { hour12: false });
   updateTaskTimes();
 }
 
@@ -116,13 +116,13 @@ function cancelEdit() {
 
 // Show Report
 function showReport() {
-  reportDate.textContent = new Date().toLocaleDateString();
+  reportDate.textContent = new Date().toLocaleDateString('en-GB');
   let report = '';
   tasks.forEach((task, index) => {
     const hours = Math.floor(task.time / 3600000);
     const minutes = Math.floor((task.time % 3600000) / 60000);
     const seconds = Math.floor((task.time % 60000) / 1000);
-    report += `${index + 1}. ${task.name}:\n   Start: ${task.startTime || 'N/A'}\n   End: ${task.endTime || 'N/A'}\n   Time: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n\n`;
+    report += `${index + 1}. ${task.name}:\n   ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n   (${task.startTime || 'N/A'}) (${task.endTime || 'N/A'})\n\n`;
   });
   reportContent.textContent = report;
   reportModal.style.display = 'flex';
@@ -156,7 +156,7 @@ function switchTask(index) {
 function updateTaskTimes() {
   taskTabs.forEach((tab, index) => {
     const task = tasks[index];
-    tab.innerHTML = `${task.name}<div class="task-time">${task.startTime ? `Start: ${task.startTime}` : ''}<br>${task.endTime ? `End: ${task.endTime}` : ''}</div>`;
+    tab.innerHTML = `${task.name}`;
   });
 }
 
