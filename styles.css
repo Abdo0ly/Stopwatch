@@ -42,6 +42,7 @@ body {
   text-align: left;
   border-radius: 5px;
   transition: background 0.3s;
+  position: relative;
 }
 
 .sidebar .task-tab.active {
@@ -50,6 +51,12 @@ body {
 
 .sidebar .task-tab:hover {
   background-color: #34495e;
+}
+
+.sidebar .task-tab .task-time {
+  font-size: 12px;
+  color: #ccc;
+  margin-top: 5px;
 }
 
 /* Main Content Styles */
@@ -89,6 +96,10 @@ body {
   border-radius: 5px;
   cursor: pointer;
   transition: background 0.3s;
+}
+
+.main-content .controls button.done {
+  background-color: #2196F3;
 }
 
 .main-content .controls button.reset {
