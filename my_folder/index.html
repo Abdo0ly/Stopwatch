@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Stopwatch</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar for Task Selection -->
+    <div class="sidebar">
+      <button class="task-tab active" data-task="1">Task 1</button>
+      <button class="task-tab" data-task="2">Task 2</button>
+      <button class="task-tab" data-task="3">Task 3</button>
+      <button class="task-tab" data-task="4">Task 4</button>
+      <button class="task-tab" data-task="5">Task 5</button>
+    </div>
+
+    <!-- Main Content (Visible Task) -->
+    <div class="main-content">
+      <!-- Task Name -->
+      <h2 class="task-name">Task 1</h2>
+
+      <!-- Stopwatch -->
+      <div class="stopwatch">00:00:00</div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button class="start-pause">Start</button>
+        <button class="done">Done</button>
+        <button class="reset" title="Reset"><i class="fas fa-redo"></i></button>
+      </div>
+
+      <!-- Edit and Report Buttons -->
+      <div class="side-buttons">
+        <button class="edit" title="Edit Task Name"><i class="fas fa-edit"></i></button>
+        <button class="report" title="Show Report"><i class="fas fa-file-alt"></i></button>
+      </div>
+
+      <!-- Reset Confirmation Modal -->
+      <div class="modal" id="reset-modal">
+        <div class="modal-content">
+          <h3>Are you sure you want to reset?</h3>
+          <div class="modal-buttons">
+            <button class="confirm" onclick="confirmReset()">✅</button>
+            <button class="cancel" onclick="cancelReset()">❌</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Task Name Modal -->
+      <div class="modal" id="edit-modal">
+        <div class="modal-content">
+          <h3>Edit Task Name</h3>
+          <input type="text" id="new-task-name" placeholder="Enter new task name">
+          <div class="modal-buttons">
+            <button id="save-edit">Save</button>
+            <button id="cancel-edit">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Modal -->
+      <div class="modal" id="report-modal">
+        <div class="modal-content">
+          <h3>Task Report - <span id="report-date"></span></h3>
+          <pre id="report-content"></pre>
+          <div class="modal-buttons">
+            <button id="close-report">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
