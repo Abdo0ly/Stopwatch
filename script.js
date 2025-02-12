@@ -51,7 +51,7 @@ function toggleStopwatch() {
       updateStopwatch();
     }, 1000);
     startPauseBtn.textContent = 'Pause';
-    tasks[currentTaskIndex].startTime = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    tasks[currentTaskIndex].startTime = new Date().toLocaleTimeString('ar-EG');
   } else {
     clearInterval(interval);
     startPauseBtn.textContent = 'Resume';
@@ -66,8 +66,8 @@ function markTaskDone() {
     isRunning = false;
     startPauseBtn.textContent = 'Start';
   }
-  tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('en-GB', { hour12: false });
-  updateTaskTimes();
+  tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
+  showReport();
 }
 
 // Reset Stopwatch
@@ -115,13 +115,13 @@ function cancelEdit() {
 
 // Show Report
 function showReport() {
-  reportDate.textContent = new Date().toLocaleDateString('en-GB');
+  reportDate.textContent = new Date().toLocaleDateString('ar-EG');
   let report = '';
   tasks.forEach((task, index) => {
     const hours = Math.floor(task.time / 3600000);
     const minutes = Math.floor((task.time % 3600000) / 60000);
     const seconds = Math.floor((task.time % 60000) / 1000);
-    report += `${index + 1}. ${task.name}:\n   ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n   (${task.startTime || 'N/A'}) ${task.endTime ? `(${task.endTime})` : ''}\n\n`;
+    report += `${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n${task.startTime || 'N/A'} - ${task.endTime || 'N/A'}\n\n`;
   });
   reportContent.textContent = report;
   reportModal.style.display = 'flex';
@@ -148,15 +148,6 @@ function switchTask(index) {
   resetModal.style.display = 'none';
   editModal.style.display = 'none';
   reportModal.style.display = 'none';
-  updateTaskTimes();
-}
-
-// Update Task Times in Sidebar
-function updateTaskTimes() {
-  taskTabs.forEach((tab, index) => {
-    const task = tasks[index];
-    tab.innerHTML = `${task.name}`;
-  });
 }
 
 // Event Listeners
