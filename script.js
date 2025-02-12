@@ -51,7 +51,7 @@ function toggleStopwatch() {
       updateStopwatch();
     }, 1000);
     startPauseBtn.textContent = 'Pause';
-    tasks[currentTaskIndex].startTime = new Date().toLocaleString('en-GB', { hour12: false });
+    tasks[currentTaskIndex].startTime = new Date().toLocaleTimeString('en-GB', { hour12: false });
   } else {
     clearInterval(interval);
     startPauseBtn.textContent = 'Resume';
@@ -66,7 +66,7 @@ function markTaskDone() {
     isRunning = false;
     startPauseBtn.textContent = 'Start';
   }
-  tasks[currentTaskIndex].endTime = new Date().toLocaleString('en-GB', { hour12: false });
+  tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('en-GB', { hour12: false });
   updateTaskTimes();
 }
 
@@ -84,7 +84,6 @@ function confirmReset() {
   tasks[currentTaskIndex].time = 0;
   tasks[currentTaskIndex].startTime = null;
   tasks[currentTaskIndex].endTime = null;
-  updateTaskTimes();
   resetModal.style.display = 'none';
 }
 
@@ -122,7 +121,7 @@ function showReport() {
     const hours = Math.floor(task.time / 3600000);
     const minutes = Math.floor((task.time % 3600000) / 60000);
     const seconds = Math.floor((task.time % 60000) / 1000);
-    report += `${index + 1}. ${task.name}:\n   ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n   (${task.startTime || 'N/A'}) (${task.endTime || 'N/A'})\n\n`;
+    report += `${index + 1}. ${task.name}:\n   ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n   (${task.startTime || 'N/A'}) ${task.endTime ? `(${task.endTime})` : ''}\n\n`;
   });
   reportContent.textContent = report;
   reportModal.style.display = 'flex';
