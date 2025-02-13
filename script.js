@@ -70,7 +70,6 @@ function markTaskDone() {
   tasks[currentTaskIndex].time += elapsedTime; // إضافة الوقت المنقضي إلى الوقت الإجمالي
   elapsedTime = 0; // إعادة تعيين الوقت المنقضي
   updateStopwatch();
-  showReport();
 }
 
 // Reset Stopwatch
@@ -125,7 +124,7 @@ function showReport() {
       const hours = Math.floor(task.time / 3600000);
       const minutes = Math.floor((task.time % 3600000) / 60000);
       const seconds = Math.floor((task.time % 60000) / 1000);
-      report += `${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\n${task.startTime || 'N/A'} - ${task.endTime || 'N/A'}\n\n`;
+      report += `${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\nبدأ: ${task.startTime || 'N/A'}\nانتهى: ${task.endTime || 'N/A'}\n\n`;
     }
   });
   reportContent.textContent = report;
