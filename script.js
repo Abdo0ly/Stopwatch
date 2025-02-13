@@ -34,21 +34,6 @@ const tasks = [
 
 let currentTaskIndex = 0;
 
-// Animation Functions
-const animations = ['bounce', 'spin', 'shake', 'pulse', 'flip'];
-
-function getRandomAnimation() {
-  return animations[Math.floor(Math.random() * animations.length)];
-}
-
-function applyAnimation(element) {
-  const animation = getRandomAnimation();
-  element.style.animation = `${animation} 0.5s ease`;
-  setTimeout(() => {
-    element.style.animation = '';
-  }, 500);
-}
-
 // Update Stopwatch Display
 function updateStopwatch() {
   const hours = Math.floor(elapsedTime / 3600000);
@@ -83,7 +68,10 @@ function markTaskDone() {
   }
   tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
   tasks[currentTaskIndex].time += elapsedTime; // إضافة الوقت المنقضي إلى الوقت الإجمالي
-  applyAnimation(doneBtn); // تطبيق انيميشن عشوائي
+  doneBtn.classList.add('done-celebration'); // تطبيق انيميشن
+  setTimeout(() => {
+    doneBtn.classList.remove('done-celebration');
+  }, 500); // إزالة الانيميشن بعد 0.5 ثانية
 }
 
 // Reset Stopwatch
@@ -138,7 +126,7 @@ function showReport() {
       const hours = Math.floor(task.time / 3600000);
       const minutes = Math.floor((task.time % 3600000) / 60000);
       const seconds = Math.floor((task.time % 60000) / 1000);
-      report += `${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\nبدأ: ${task.startTime || 'N/A'}\nانتهى: ${task.endTime || 'N/A'}\n\n`;
+      report += `${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\nبدأ: ${task.startTime || 'N/A'} - انتهى: ${task.endTime || 'N/A'}\n\n`;
     }
   });
   reportContent.textContent = report;
