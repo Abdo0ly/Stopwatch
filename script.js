@@ -176,4 +176,8 @@ cancelEditBtn.addEventListener('click', cancelEdit);
 closeReportBtn.addEventListener('click', closeReport);
 
 taskTabs.forEach((tab, index) => {
-  tab.addEventListener('click', () => switchTask
+  tab.addEventListener('click', () => switchTask(index));
+});
+
+// Initialize First Task
+switchTask(0);
