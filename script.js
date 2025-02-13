@@ -7,6 +7,7 @@ const doneBtn = document.querySelector('.done');
 const resetBtn = document.querySelector('.reset');
 const editBtn = document.querySelector('.edit');
 const reportBtn = document.querySelector('.report');
+const themeToggleBtn = document.querySelector('.theme-toggle');
 const resetModal = document.getElementById('reset-modal');
 const editModal = document.getElementById('edit-modal');
 const newTaskNameInput = document.getElementById('new-task-name');
@@ -155,19 +156,24 @@ function switchTask(index) {
   reportModal.style.display = 'none';
 }
 
+// Toggle Dark Mode
+function toggleDarkMode() {
+  document.body.classList.toggle('dark-mode');
+  const isDarkMode = document.body.classList.contains('dark-mode');
+  themeToggleBtn.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+  themeToggleBtn.title = isDarkMode ? 'تبديل إلى الوضع الفاتح' : 'تبديل إلى الوضع الداكن';
+}
+
 // Event Listeners
 startPauseBtn.addEventListener('click', toggleStopwatch);
 doneBtn.addEventListener('click', markTaskDone);
 resetBtn.addEventListener('click', resetStopwatch);
 editBtn.addEventListener('click', editTaskName);
 reportBtn.addEventListener('click', showReport);
+themeToggleBtn.addEventListener('click', toggleDarkMode);
 saveEditBtn.addEventListener('click', saveTaskName);
 cancelEditBtn.addEventListener('click', cancelEdit);
 closeReportBtn.addEventListener('click', closeReport);
 
 taskTabs.forEach((tab, index) => {
-  tab.addEventListener('click', () => switchTask(index));
-});
-
-// Initialize First Task
-switchTask(0);
+  tab.addEventListener('click', () => switchTask
