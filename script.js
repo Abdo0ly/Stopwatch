@@ -34,6 +34,21 @@ const tasks = [
 
 let currentTaskIndex = 0;
 
+// Animation Functions
+const animations = ['bounce', 'spin', 'shake', 'pulse', 'flip'];
+
+function getRandomAnimation() {
+  return animations[Math.floor(Math.random() * animations.length)];
+}
+
+function applyAnimation(element) {
+  const animation = getRandomAnimation();
+  element.style.animation = `${animation} 0.5s ease`;
+  setTimeout(() => {
+    element.style.animation = '';
+  }, 500);
+}
+
 // Update Stopwatch Display
 function updateStopwatch() {
   const hours = Math.floor(elapsedTime / 3600000);
@@ -68,8 +83,7 @@ function markTaskDone() {
   }
   tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
   tasks[currentTaskIndex].time += elapsedTime; // إضافة الوقت المنقضي إلى الوقت الإجمالي
-  elapsedTime = 0; // إعادة تعيين الوقت المنقضي
-  updateStopwatch();
+  applyAnimation(doneBtn); // تطبيق انيميشن عشوائي
 }
 
 // Reset Stopwatch
