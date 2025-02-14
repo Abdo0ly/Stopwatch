@@ -1,329 +1,270 @@
-/* General Styles */
+// DOM Elements
+const taskTabs = document.querySelectorAll('.task-tab');
+const taskName = document.querySelector('.task-name');
+const stopwatch = document.querySelector('.stopwatch');
+const startPauseBtn = document.querySelector('.start-pause');
+const doneBtn = document.querySelector('.done');
+const resetBtn = document.querySelector('.reset');
+const editBtn = document.querySelector('.edit');
+const reportBtn = document.querySelector('.report');
+const themeToggleBtn = document.querySelector('.theme-toggle');
+const resetModal = document.getElementById('reset-modal');
+const editModal = document.getElementById('edit-modal');
+const newTaskNameInput = document.getElementById('new-task-name');
+const saveEditBtn = document.getElementById('save-edit');
+const cancelEditBtn = document.getElementById('cancel-edit');
+const reportModal = document.getElementById('report-modal');
+const reportContent = document.getElementById('report-content');
+const closeReportBtn = document.getElementById('close-report');
+const reportDate = document.getElementById('report-date');
+const celebrationAnimation = document.getElementById('celebration-animation');
 
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    transition: background-color 0.3s, color 0.3s;
+// Stopwatch Variables
+let isRunning = false;
+let startTime = 0;
+let elapsedTime = 0;
+let interval;
+
+// Task Data
+const tasks = [
+    { name: 'Task 1', time: 0, startTime: null, endTime: null, done: false },
+    { name: 'Task 2', time: 0, startTime: null, endTime: null, done: false },
+    { name: 'Task 3', time: 0, startTime: null, endTime: null, done: false },
+    { name: 'Task 4', time: 0, startTime: null, endTime: null, done: false },
+    { name: 'Task 5', time: 0, startTime: null, endTime: null, done: false },
+];
+
+let currentTaskIndex = 0;
+
+// Update Stopwatch Display
+function updateStopwatch() {
+    const hours = Math.floor(elapsedTime / 3600000);
+    const minutes = Math.floor((elapsedTime % 3600000) / 60000);
+    const seconds = Math.floor((elapsedTime % 60000) / 1000);
+    stopwatch.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-body.dark-mode {
-    background-color: #1e1e1e;
-    color: #f4f4f4;
-}
-
-.container {
-    display: flex;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    width: 800px;
-    max-width: 90%;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-body.dark-mode .container {
-    background-color: #2c3e50;
-    color: #f4f4f4;
-}
-
-
-/* Sidebar Styles */
-
-.sidebar {
-    background-color: #2c3e50;
-    padding: 20px;
-    width: 150px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transition: background-color 0.3s;
-}
-
-body.dark-mode .sidebar {
-    background-color: #1c2a38;
-}
-
-.sidebar .task-tab {
-    background: none;
-    border: none;
-    color: white;
-    padding: 10px;
-    margin: 5px 0;
-    cursor: pointer;
-    width: 100%;
-    text-align: right;
-    border-radius: 5px;
-    transition: background 0.3s;
-}
-
-.sidebar .task-tab.active {
-    background-color: #34495e;
-}
-
-.sidebar .task-tab:hover {
-    background-color: #34495e;
-}
-
-
-/* Main Content Styles */
-
-.main-content {
-    flex: 1;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-}
-
-.main-content .task-name {
-    font-size: 24px;
-    margin-bottom: 20px;
-    color: #2c3e50;
-    transition: color 0.3s;
-}
-
-body.dark-mode .main-content .task-name {
-    color: #f4f4f4;
-}
-
-.main-content .stopwatch {
-    font-size: 48px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    color: #2c3e50;
-    transition: color 0.3s;
-}
-
-body.dark-mode .main-content .stopwatch {
-    color: #f4f4f4;
-}
-
-.main-content .controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.main-content .controls button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.main-content .controls button.done {
-    background-color: #2196F3;
-}
-
-.main-content .controls button.reset {
-    background-color: #f44336;
-    padding: 10px;
-    width: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.main-content .controls button:hover {
-    opacity: 0.9;
-}
-
-.main-content .controls button.hidden {
-    display: none;
-}
-
-
-/* Side Buttons (Edit and Report) */
-
-.main-content .side-buttons {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.main-content .side-buttons button {
-    background: none;
-    border: none;
-    color: #2c3e50;
-    cursor: pointer;
-    font-size: 20px;
-    position: relative;
-    transition: color 0.3s;
-}
-
-body.dark-mode .main-content .side-buttons button {
-    color: #f4f4f4;
-}
-
-.main-content .side-buttons button::after {
-    content: attr(title);
-    position: absolute;
-    top: 50%;
-    left: 30px;
-    transform: translateY(-50%);
-    background: #2c3e50;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 14px;
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-}
-
-.main-content .side-buttons button:hover::after {
-    opacity: 1;
-}
-
-
-/* Modal Styles */
-
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    justify-content: center;
-    align-items: center;
-}
-
-.modal-content {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 300px;
-    text-align: center;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s, color 0.3s;
-}
-
-body.dark-mode .modal-content {
-    background-color: #2c3e50;
-    color: #f4f4f4;
-}
-
-.modal-content h3 {
-    margin-top: 0;
-    color: #2c3e50;
-    transition: color 0.3s;
-}
-
-body.dark-mode .modal-content h3 {
-    color: #f4f4f4;
-}
-
-.modal-content input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-}
-
-body.dark-mode .modal-content input {
-    background-color: #1c2a38;
-    color: #f4f4f4;
-    border-color: #34495e;
-}
-
-.modal-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.modal-buttons button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.modal-buttons button.confirm {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.modal-buttons button.cancel {
-    background-color: #f44336;
-    color: white;
-}
-
-.modal-buttons button#save-edit {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.modal-buttons button#cancel-edit,
-.modal-buttons button#close-report {
-    background-color: #f44336;
-    color: white;
-}
-
-
-/* Celebration Animation */
-
-#celebration-animation {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 1000;
-    overflow: hidden;
-}
-
-.confetti {
-    position: fixed;
-    transform-origin: center;
-    animation: confetti-spread var(--duration, 2s) ease-out forwards;
-}
-
-.confetti.square {
-    border-radius: 2px;
-}
-
-.confetti.rectangle {
-    border-radius: 1px;
-}
-
-.confetti.strip {
-    border-radius: 1px;
-    transform-origin: center bottom;
-}
-
-@keyframes confetti-spread {
-    0% {
-        transform: translate(0, 0) rotate(0deg);
-        opacity: 1;
+// Start/Pause Stopwatch
+function toggleStopwatch() {
+    if (!isRunning) {
+        startTime = Date.now() - elapsedTime;
+        interval = setInterval(() => {
+            elapsedTime = Date.now() - startTime;
+            updateStopwatch();
+        }, 1000);
+        startPauseBtn.textContent = 'Pause';
+        tasks[currentTaskIndex].startTime = new Date().toLocaleTimeString('ar-EG');
+    } else {
+        clearInterval(interval);
+        startPauseBtn.textContent = 'Resume';
     }
-    50% {
-        opacity: 1;
+    isRunning = !isRunning;
+}
+
+// Done Button
+function markTaskDone() {
+    if (isRunning) {
+        clearInterval(interval);
+        isRunning = false;
+        startPauseBtn.textContent = 'Start';
     }
-    100% {
-        transform: translate( calc(cos(var(--angle)) * var(--distance)), calc(sin(var(--angle)) * var(--distance))) rotate(var(--rotation, 360deg));
-        opacity: 0;
+    tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
+    tasks[currentTaskIndex].time += elapsedTime;
+    tasks[currentTaskIndex].done = true;
+    celebrate(); // تشغيل الانيميشن قبل إخفاء الزر
+}
+
+// Celebration Animation
+function celebrate() {
+    const colors = [
+        '#FFD700', // ذهبي
+        '#FFA500', // برتقالي
+        '#FF6B6B', // وردي فاتح
+        '#FF4136', // أحمر
+        '#FFE4B5', // بيج فاتح
+        '#FFFFFF', // أبيض
+        '#FFB6C1', // وردي فاتح
+        '#FFC0CB', // وردي
+        '#FFD700', // ذهبي آخر
+        '#FF69B4' // وردي غامق
+    ];
+
+    // الحصول على موقع زر Done
+    const doneButton = document.querySelector('.done');
+    const buttonRect = doneButton.getBoundingClientRect();
+    const startX = buttonRect.left + buttonRect.width / 2;
+    const startY = buttonRect.top + buttonRect.height / 2;
+
+    // إنشاء 150 قطعة
+    for (let i = 0; i < 150; i++) {
+        const confetti = document.createElement('div');
+        confetti.classList.add('confetti');
+
+        // تحديد نوع القطعة (تقليل نسبة الشرائط)
+        const type = Math.random();
+        if (type < 0.4) {
+            confetti.classList.add('square');
+        } else if (type < 0.7) {
+            confetti.classList.add('rectangle');
+        } else {
+            confetti.classList.add('strip');
+        }
+
+        // تعيين موقع البداية عند زر Done
+        confetti.style.left = startX + 'px';
+        confetti.style.top = startY + 'px';
+
+        // تعيين لون عشوائي
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+        // تعيين حجم أصغر
+        const size = Math.random() * 4 + 1;
+        if (confetti.classList.contains('strip')) {
+            confetti.style.width = (size / 2) + 'px';
+            confetti.style.height = (size * 3) + 'px';
+        } else if (confetti.classList.contains('rectangle')) {
+            confetti.style.width = size + 'px';
+            confetti.style.height = (size * 1.2) + 'px';
+        } else {
+            confetti.style.width = size + 'px';
+            confetti.style.height = size + 'px';
+        }
+
+        // تعيين زاوية للانتشار لأعلى مع مدى أوسع
+        const angle = (Math.random() * 120 - 60) + 270; // انتشار في نطاق 120 درجة لأعلى
+        const velocity = 250 + Math.random() * 150;
+        confetti.style.setProperty('--angle', angle + 'deg');
+        confetti.style.setProperty('--distance', velocity + 'px');
+
+        // حركة أبطأ قليلاً
+        confetti.style.animationDelay = Math.random() * 0.2 + 's';
+        confetti.style.animationDuration = Math.random() * 0.8 + 1 + 's';
+
+        // دوران عشوائي
+        const rotation = Math.random() * 360 - 180;
+        confetti.style.setProperty('--rotation', rotation + 'deg');
+
+        celebrationAnimation.appendChild(confetti);
+    }
+
+    // إخفاء زر Done بعد الانيميشن
+    setTimeout(() => {
+        doneBtn.classList.add('hidden');
+    }, 1000);
+
+    // إزالة عناصر الانيميشن
+    setTimeout(() => {
+        celebrationAnimation.innerHTML = '';
+    }, 2500);
+}
+
+// Reset Stopwatch
+function resetStopwatch() {
+    clearInterval(interval);
+    elapsedTime = 0;
+    updateStopwatch();
+    isRunning = false;
+    startPauseBtn.textContent = 'Start';
+    tasks[currentTaskIndex].time = 0;
+    tasks[currentTaskIndex].startTime = null;
+    tasks[currentTaskIndex].endTime = null;
+    tasks[currentTaskIndex].done = false; // إعادة تعيين حالة المهمة
+    doneBtn.classList.remove('hidden'); // إظهار زر Done
+    resetModal.style.display = 'none';
+}
+
+function confirmReset() {
+    resetStopwatch();
+    resetModal.style.display = 'none';
+}
+
+function cancelReset() {
+    resetModal.style.display = 'none';
+}
+
+// Edit Task Name
+function editTaskName() {
+    newTaskNameInput.value = tasks[currentTaskIndex].name;
+    editModal.style.display = 'flex';
+}
+
+// Save Edited Task Name
+function saveTaskName() {
+    const newName = newTaskNameInput.value.trim();
+    if (newName) {
+        tasks[currentTaskIndex].name = newName;
+        taskName.textContent = newName;
+        taskTabs[currentTaskIndex].textContent = newName;
+        editModal.style.display = 'none';
     }
 }
+
+// Cancel Edit
+function cancelEdit() {
+    editModal.style.display = 'none';
+}
+
+// Show Report
+function showReport() {
+    reportDate.textContent = new Date().toLocaleDateString('ar-EG');
+    let report = '';
+    tasks.forEach((task) => {
+        if (task.time > 0) { // عرض المهام التي تم العمل عليها فقط
+            const hours = Math.floor(task.time / 3600000);
+            const minutes = Math.floor((task.time % 3600000) / 60000);
+            const seconds = Math.floor((task.time % 60000) / 1000);
+            report += `${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\nبدأ: ${task.startTime || 'N/A'} - انتهى: ${task.endTime || 'N/A'}\n\n`;
+        }
+    });
+    reportContent.textContent = report;
+    reportModal.style.display = 'flex';
+}
+
+// Close Report
+function closeReport() {
+    reportModal.style.display = 'none';
+}
+
+// Switch Task
+function switchTask(index) {
+    currentTaskIndex = index;
+    taskName.textContent = tasks[currentTaskIndex].name;
+    elapsedTime = tasks[currentTaskIndex].time;
+    updateStopwatch();
+    clearInterval(interval);
+    isRunning = false;
+    startPauseBtn.textContent = 'Start';
+    taskTabs.forEach((tab, i) => {
+        tab.classList.toggle('active', i === index);
+    });
+    resetModal.style.display = 'none';
+    editModal.style.display = 'none';
+    reportModal.style.display = 'none';
+    doneBtn.classList.toggle('hidden', tasks[currentTaskIndex].done); // إظهار/إخفاء زر Done بناءً على حالة المهمة
+}
+
+// Toggle Dark Mode
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    themeToggleBtn.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    themeToggleBtn.title = isDarkMode ? 'الوضع الفاتح' : 'الوضع الداكن';
+}
+
+// Event Listeners
+startPauseBtn.addEventListener('click', toggleStopwatch);
+doneBtn.addEventListener('click', markTaskDone);
+resetBtn.addEventListener('click', resetStopwatch);
+editBtn.addEventListener('click', editTaskName);
+reportBtn.addEventListener('click', showReport);
+themeToggleBtn.addEventListener('click', toggleDarkMode);
+saveEditBtn.addEventListener('click', saveTaskName);
+cancelEditBtn.addEventListener('click', cancelEdit);
+closeReportBtn.addEventListener('click', closeReport);
+
+taskTabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => switchTask(index));
+});
+
+// Initialize First Task
+switchTask(0);
