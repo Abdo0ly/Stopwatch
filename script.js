@@ -25,14 +25,16 @@ let startTime = 0;
 let elapsedTime = 0;
 let interval;
 
-// Task Data
-const tasks = [
+// تعديل متغير المهام ليقرأ من localStorage إذا وجد، وإلا يستخدم القيم الافتراضية
+const defaultTasks = [
     { name: 'Task 1', time: 0, startTime: null, endTime: null, done: false },
     { name: 'Task 2', time: 0, startTime: null, endTime: null, done: false },
     { name: 'Task 3', time: 0, startTime: null, endTime: null, done: false },
     { name: 'Task 4', time: 0, startTime: null, endTime: null, done: false },
     { name: 'Task 5', time: 0, startTime: null, endTime: null, done: false },
 ];
+
+let tasks = JSON.parse(localStorage.getItem('tasks')) || defaultTasks;
 
 let currentTaskIndex = 0;
 
@@ -51,9 +53,12 @@ function toggleStopwatch() {
         interval = setInterval(() => {
             elapsedTime = Date.now() - startTime;
             updateStopwatch();
+            tasks[currentTaskIndex].time = elapsedTime; // تحديث الوقت
+            saveTasks(); // حفظ البيانات
         }, 1000);
         startPauseBtn.textContent = 'Pause';
         tasks[currentTaskIndex].startTime = new Date().toLocaleTimeString('ar-EG');
+        saveTasks(); // حفظ البيانات
     } else {
         clearInterval(interval);
         startPauseBtn.textContent = 'Resume';
@@ -71,7 +76,8 @@ function markTaskDone() {
     tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
     tasks[currentTaskIndex].time += elapsedTime;
     tasks[currentTaskIndex].done = true;
-    celebrate(); // تشغيل الانيميشن قبل إخفاء الزر
+    saveTasks(); // حفظ البيانات
+    celebrate();
 }
 
 // Celebration Animation
@@ -169,9 +175,10 @@ function resetStopwatch() {
     tasks[currentTaskIndex].time = 0;
     tasks[currentTaskIndex].startTime = null;
     tasks[currentTaskIndex].endTime = null;
-    tasks[currentTaskIndex].done = false; // إعادة تعيين حالة المهمة
-    doneBtn.classList.remove('hidden'); // إظهار زر Done
+    tasks[currentTaskIndex].done = false;
+    doneBtn.classList.remove('hidden');
     resetModal.style.display = 'none';
+    saveTasks(); // حفظ البيانات
 }
 
 function confirmReset() {
@@ -197,6 +204,7 @@ function saveTaskName() {
         taskName.textContent = newName;
         taskTabs[currentTaskIndex].textContent = newName;
         editModal.style.display = 'none';
+        saveTasks(); // حفظ البيانات
     }
 }
 
@@ -237,11 +245,12 @@ function switchTask(index) {
     startPauseBtn.textContent = 'Start';
     taskTabs.forEach((tab, i) => {
         tab.classList.toggle('active', i === index);
+        tab.textContent = tasks[i].name; // تحديث أسماء المهام في الشريط الجانبي
     });
     resetModal.style.display = 'none';
     editModal.style.display = 'none';
     reportModal.style.display = 'none';
-    doneBtn.classList.toggle('hidden', tasks[currentTaskIndex].done); // إظهار/إخفاء زر Done بناءً على حالة المهمة
+    doneBtn.classList.toggle('hidden', tasks[currentTaskIndex].done);
 }
 
 // Toggle Theme
@@ -282,3 +291,8 @@ taskTabs.forEach((tab, index) => {
 
 // Initialize First Task
 switchTask(0);
+
+// دالة لحفظ البيانات في localStorage
+function saveTasks() {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+}
