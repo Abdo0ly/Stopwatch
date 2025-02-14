@@ -135,6 +135,10 @@ body.dark-mode .main-content .stopwatch {
   opacity: 0.9;
 }
 
+.main-content .controls button.hidden {
+  display: none;
+}
+
 /* Side Buttons (Edit and Report) */
 .main-content .side-buttons {
   position: absolute;
@@ -285,7 +289,7 @@ body.dark-mode .modal-content input {
   width: 10px;
   height: 10px;
   background-color: #ff0;
-  animation: confetti-fall 3s linear;
+  animation: confetti-fall 3s ease-out;
 }
 
 @keyframes confetti-fall {
@@ -294,5 +298,25 @@ body.dark-mode .modal-content input {
   }
   100% {
     transform: translateY(100vh) rotate(720deg);
+  }
+}
+
+.firework {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #ff0;
+  border-radius: 50%;
+  animation: firework-explode 1s ease-out;
+}
+
+@keyframes firework-explode {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(10);
+    opacity: 0;
   }
 }
