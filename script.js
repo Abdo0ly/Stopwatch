@@ -244,12 +244,25 @@ function switchTask(index) {
     doneBtn.classList.toggle('hidden', tasks[currentTaskIndex].done); // إظهار/إخفاء زر Done بناءً على حالة المهمة
 }
 
-// Toggle Dark Mode
-function toggleDarkMode() {
-    document.body.classList.toggle('dark-mode');
-    const isDarkMode = document.body.classList.contains('dark-mode');
-    themeToggleBtn.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-    themeToggleBtn.title = isDarkMode ? 'الوضع الفاتح' : 'الوضع الداكن';
+// Toggle Theme
+function toggleTheme() {
+    if (document.body.classList.contains('dark-mode')) {
+        // من الداكن إلى الحديث
+        document.body.classList.remove('dark-mode');
+        document.body.classList.add('modern-mode');
+        themeToggleBtn.innerHTML = '<i class="fas fa-palette"></i>';
+        themeToggleBtn.title = 'الوضع العادي';
+    } else if (document.body.classList.contains('modern-mode')) {
+        // من الحديث إلى العادي
+        document.body.classList.remove('modern-mode');
+        themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        themeToggleBtn.title = 'الوضع الداكن';
+    } else {
+        // من العادي إلى الداكن
+        document.body.classList.add('dark-mode');
+        themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        themeToggleBtn.title = 'الوضع الحديث';
+    }
 }
 
 // Event Listeners
@@ -258,7 +271,7 @@ doneBtn.addEventListener('click', markTaskDone);
 resetBtn.addEventListener('click', resetStopwatch);
 editBtn.addEventListener('click', editTaskName);
 reportBtn.addEventListener('click', showReport);
-themeToggleBtn.addEventListener('click', toggleDarkMode);
+themeToggleBtn.addEventListener('click', toggleTheme);
 saveEditBtn.addEventListener('click', saveTaskName);
 cancelEditBtn.addEventListener('click', cancelEdit);
 closeReportBtn.addEventListener('click', closeReport);
