@@ -173,6 +173,7 @@ function switchTask(index) {
   resetModal.style.display = 'none';
   editModal.style.display = 'none';
   reportModal.style.display = 'none';
+  doneBtn.classList.toggle('hidden', tasks[currentTaskIndex].done); // إظهار/إخفاء زر Done بناءً على حالة المهمة
 }
 
 // Toggle Dark Mode
