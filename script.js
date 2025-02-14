@@ -100,7 +100,7 @@ function celebrate() {
         const confetti = document.createElement('div');
         confetti.classList.add('confetti');
 
-        // تحديد نوع القطعة (تقليل نسبة الشرائط)
+        // تحديد نوع القطعة
         const type = Math.random();
         if (type < 0.4) {
             confetti.classList.add('square');
@@ -110,7 +110,7 @@ function celebrate() {
             confetti.classList.add('strip');
         }
 
-        // تعيين موقع البداية عند زر Done
+        // تعيين موقع البداية
         confetti.style.left = startX + 'px';
         confetti.style.top = startY + 'px';
 
@@ -130,9 +130,10 @@ function celebrate() {
             confetti.style.height = size + 'px';
         }
 
-        // تعيين زاوية للانتشار لأعلى مع مدى أوسع
-        const angle = (Math.random() * 120 - 60) + 270; // انتشار في نطاق 120 درجة لأعلى
-        const velocity = 250 + Math.random() * 150;
+        // تعيين زاوية للانتشار في جميع الاتجاهات مع تفضيل الاتجاه لأعلى
+        const baseAngle = Math.random() * 90 - 45; // انتشار أولي في نطاق 90 درجة
+        const angle = baseAngle + (Math.random() * 60 + 240); // إضافة زاوية عشوائية مع تفضيل الاتجاه لأعلى
+        const velocity = 150 + Math.random() * 120; // مسافة متوسطة (من 150 إلى 270 بكسل)
         confetti.style.setProperty('--angle', angle + 'deg');
         confetti.style.setProperty('--distance', velocity + 'px');
 
