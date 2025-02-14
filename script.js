@@ -53,15 +53,19 @@ function toggleStopwatch() {
         interval = setInterval(() => {
             elapsedTime = Date.now() - startTime;
             updateStopwatch();
-            tasks[currentTaskIndex].time = elapsedTime; // تحديث الوقت
-            saveTasks(); // حفظ البيانات
+            tasks[currentTaskIndex].time = elapsedTime;
+            saveTasks();
         }, 1000);
         startPauseBtn.textContent = 'Pause';
-        tasks[currentTaskIndex].startTime = new Date().toLocaleTimeString('ar-EG');
-        saveTasks(); // حفظ البيانات
+        if (!tasks[currentTaskIndex].startTime) {
+            tasks[currentTaskIndex].startTime = new Date().toLocaleTimeString('ar-EG');
+        }
+        saveTasks();
     } else {
         clearInterval(interval);
         startPauseBtn.textContent = 'Resume';
+        tasks[currentTaskIndex].time = elapsedTime;
+        saveTasks();
     }
     isRunning = !isRunning;
 }
@@ -236,17 +240,24 @@ function closeReport() {
 
 // Switch Task
 function switchTask(index) {
+    if (isRunning) {
+        clearInterval(interval);
+        tasks[currentTaskIndex].time = elapsedTime;
+        saveTasks();
+        isRunning = false;
+    }
+
     currentTaskIndex = index;
     taskName.textContent = tasks[currentTaskIndex].name;
-    elapsedTime = tasks[currentTaskIndex].time;
+    elapsedTime = tasks[currentTaskIndex].time || 0;
     updateStopwatch();
-    clearInterval(interval);
-    isRunning = false;
+
     startPauseBtn.textContent = 'Start';
     taskTabs.forEach((tab, i) => {
         tab.classList.toggle('active', i === index);
-        tab.textContent = tasks[i].name; // تحديث أسماء المهام في الشريط الجانبي
+        tab.textContent = tasks[i].name;
     });
+
     resetModal.style.display = 'none';
     editModal.style.display = 'none';
     reportModal.style.display = 'none';
