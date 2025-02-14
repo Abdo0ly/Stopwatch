@@ -17,6 +17,7 @@ const reportModal = document.getElementById('report-modal');
 const reportContent = document.getElementById('report-content');
 const closeReportBtn = document.getElementById('close-report');
 const reportDate = document.getElementById('report-date');
+const celebrationAnimation = document.getElementById('celebration-animation');
 
 // Stopwatch Variables
 let isRunning = false;
@@ -69,10 +70,23 @@ function markTaskDone() {
   }
   tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
   tasks[currentTaskIndex].time += elapsedTime; // إضافة الوقت المنقضي إلى الوقت الإجمالي
-  doneBtn.classList.add('done-celebration'); // تطبيق انيميشن
+  celebrate(); // تشغيل الانيميشن
+}
+
+// Celebration Animation
+function celebrate() {
+  for (let i = 0; i < 100; i++) {
+    const confetti = document.createElement('div');
+    confetti.classList.add('confetti');
+    confetti.style.left = `${Math.random() * 100}vw`;
+    confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+    confetti.style.animationDuration = `${Math.random() * 2 + 1}s`;
+    celebrationAnimation.appendChild(confetti);
+  }
+
   setTimeout(() => {
-    doneBtn.classList.remove('done-celebration');
-  }, 500); // إزالة الانيميشن بعد 0.5 ثانية
+    celebrationAnimation.innerHTML = '';
+  }, 3000); // إزالة الانيميشن بعد 3 ثواني
 }
 
 // Reset Stopwatch
@@ -161,7 +175,7 @@ function toggleDarkMode() {
   document.body.classList.toggle('dark-mode');
   const isDarkMode = document.body.classList.contains('dark-mode');
   themeToggleBtn.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-  themeToggleBtn.title = isDarkMode ? 'تبديل إلى الوضع الفاتح' : 'تبديل إلى الوضع الداكن';
+  themeToggleBtn.title = isDarkMode ? 'الوضع الفاتح' : 'الوضع الداكن';
 }
 
 // Event Listeners
