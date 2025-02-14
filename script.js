@@ -27,11 +27,11 @@ let interval;
 
 // Task Data
 const tasks = [
-  { name: 'Task 1', time: 0, startTime: null, endTime: null },
-  { name: 'Task 2', time: 0, startTime: null, endTime: null },
-  { name: 'Task 3', time: 0, startTime: null, endTime: null },
-  { name: 'Task 4', time: 0, startTime: null, endTime: null },
-  { name: 'Task 5', time: 0, startTime: null, endTime: null },
+  { name: 'Task 1', time: 0, startTime: null, endTime: null, done: false },
+  { name: 'Task 2', time: 0, startTime: null, endTime: null, done: false },
+  { name: 'Task 3', time: 0, startTime: null, endTime: null, done: false },
+  { name: 'Task 4', time: 0, startTime: null, endTime: null, done: false },
+  { name: 'Task 5', time: 0, startTime: null, endTime: null, done: false },
 ];
 
 let currentTaskIndex = 0;
@@ -70,6 +70,8 @@ function markTaskDone() {
   }
   tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
   tasks[currentTaskIndex].time += elapsedTime; // إضافة الوقت المنقضي إلى الوقت الإجمالي
+  tasks[currentTaskIndex].done = true; // تم إنجاز المهمة
+  doneBtn.classList.add('hidden'); // إخفاء زر Done
   celebrate(); // تشغيل الانيميشن
 }
 
@@ -91,10 +93,6 @@ function celebrate() {
 
 // Reset Stopwatch
 function resetStopwatch() {
-  resetModal.style.display = 'flex';
-}
-
-function confirmReset() {
   clearInterval(interval);
   elapsedTime = 0;
   updateStopwatch();
@@ -103,6 +101,13 @@ function confirmReset() {
   tasks[currentTaskIndex].time = 0;
   tasks[currentTaskIndex].startTime = null;
   tasks[currentTaskIndex].endTime = null;
+  tasks[currentTaskIndex].done = false; // إعادة تعيين حالة المهمة
+  doneBtn.classList.remove('hidden'); // إظهار زر Done
+  resetModal.style.display = 'none';
+}
+
+function confirmReset() {
+  resetStopwatch();
   resetModal.style.display = 'none';
 }
 
