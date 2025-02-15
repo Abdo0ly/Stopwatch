@@ -154,6 +154,7 @@ body.dark-mode .main-content .stopwatch {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    height: calc(100% - 40px);
 }
 
 .main-content .side-buttons button {
@@ -171,35 +172,27 @@ body.dark-mode .main-content .side-buttons button {
 }
 
 .main-content .side-buttons button::after {
+    content: none;
+}
+
+.main-content .side-buttons button.edit::after {
+    content: "تعديل";
+}
+
+.main-content .side-buttons button.report::after {
+    content: "التقرير";
+}
+
+.main-content .side-buttons button.theme-toggle::after {
     content: "الوضع";
-    position: absolute;
-    top: 50%;
-    left: 30px;
-    transform: translateY(-50%);
-    background: #2c3e50;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 14px;
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-    white-space: nowrap;
 }
-
-.main-content .side-buttons button:hover::after {
-    opacity: 1;
-}
-
-
-/* إضافة ستايل لزر Reset All */
 
 .main-content .side-buttons button.reset-all {
-    color: #f44336;
+    margin-top: auto;
 }
 
 .main-content .side-buttons button.reset-all::after {
-    content: "إعادة تعيين الكل";
+    content: "إعادة تعيين";
 }
 
 body.dark-mode .main-content .side-buttons button.reset-all {
