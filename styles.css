@@ -172,7 +172,33 @@ body.dark-mode .main-content .side-buttons button {
 }
 
 .main-content .side-buttons button::after {
-    content: none;
+    content: "الوضع";
+    position: absolute;
+    top: 50%;
+    left: 30px;
+    transform: translateY(-50%);
+    background: #2c3e50;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+body.dark-mode .main-content .side-buttons button::after {
+    background: #1c2a38;
+}
+
+body.modern-mode .main-content .side-buttons button::after {
+    background: #8B4513;
+    color: #F5EBE0;
+}
+
+.main-content .side-buttons button:hover::after {
+    opacity: 1;
 }
 
 .main-content .side-buttons button.edit::after {
