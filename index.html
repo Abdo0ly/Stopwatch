@@ -1,85 +1,102 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Task Stopwatch</title>
-  <link rel="stylesheet" href="styles.css">
-  <!-- Font Awesome for Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Stopwatch</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
+
 <body>
-  <div class="container">
-    <!-- Sidebar for Task Selection -->
-    <div class="sidebar">
-      <button class="task-tab active" data-task="1">Task 1</button>
-      <button class="task-tab" data-task="2">Task 2</button>
-      <button class="task-tab" data-task="3">Task 3</button>
-      <button class="task-tab" data-task="4">Task 4</button>
-      <button class="task-tab" data-task="5">Task 5</button>
+    <div class="container">
+        <!-- Sidebar for Task Selection -->
+        <div class="sidebar">
+            <button class="task-tab active" data-task="1">Task 1</button>
+            <button class="task-tab" data-task="2">Task 2</button>
+            <button class="task-tab" data-task="3">Task 3</button>
+            <button class="task-tab" data-task="4">Task 4</button>
+            <button class="task-tab" data-task="5">Task 5</button>
+        </div>
+
+        <!-- Main Content (Visible Task) -->
+        <div class="main-content">
+            <!-- Task Name -->
+            <h2 class="task-name">Task 1</h2>
+
+            <!-- Stopwatch -->
+            <div class="stopwatch">00:00:00</div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button class="start-pause">Start</button>
+                <button class="done">Done</button>
+                <button class="reset" title="Reset"><i class="fas fa-redo"></i></button>
+            </div>
+
+            <!-- Edit and Report Buttons -->
+            <div class="side-buttons">
+                <button class="edit" title="تعديل"><i class="fas fa-edit"></i></button>
+                <button class="report" title="التقرير"><i class="fas fa-file-alt"></i></button>
+                <button class="theme-toggle" title="الوضع"><i class="fas fa-moon"></i></button>
+                <button class="neon-toggle" title="وضع النيون"><i class="fas fa-bolt"></i></button>
+                <button class="reset-all" title="إعادة تعيين الكل"><i class="fas fa-trash-alt"></i></button>
+            </div>
+
+            <!-- Reset Confirmation Modal -->
+            <div class="modal" id="reset-modal">
+                <div class="modal-content">
+                    <h3>هل أنت متأكد من إعادة التعيين؟</h3>
+                    <div class="modal-buttons">
+                        <button class="confirm" onclick="confirmReset()">✅</button>
+                        <button class="cancel" onclick="cancelReset()">❌</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Task Name Modal -->
+            <div class="modal" id="edit-modal">
+                <div class="modal-content">
+                    <h3>تعديل اسم المهمة</h3>
+                    <input type="text" id="new-task-name" placeholder="أدخل اسم المهمة الجديد">
+                    <div class="modal-buttons">
+                        <button id="save-edit">حفظ</button>
+                        <button id="cancel-edit">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Modal -->
+            <div class="modal" id="report-modal">
+                <div class="modal-content">
+                    <h3>تقرير المهام - <span id="report-date"></span></h3>
+                    <pre id="report-content"></pre>
+                    <div class="modal-buttons">
+                        <button id="close-report">إغلاق</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reset All Confirmation Modal -->
+            <div class="modal" id="reset-all-modal">
+                <div class="modal-content">
+                    <h3>هل أنت متأكد من إعادة تعيين كل المهام؟</h3>
+                    <p>سيتم مسح جميع الأوقات وإعادة أسماء المهام للوضع الافتراضي</p>
+                    <div class="modal-buttons">
+                        <button class="confirm" onclick="confirmResetAll()">✅</button>
+                        <button class="cancel" onclick="cancelResetAll()">❌</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Main Content (Visible Task) -->
-    <div class="main-content">
-      <!-- Task Name -->
-      <h2 class="task-name">Task 1</h2>
+    <!-- Animation Elements -->
+    <div id="celebration-animation"></div>
 
-      <!-- Stopwatch -->
-      <div class="stopwatch">00:00:00</div>
-
-      <!-- Controls -->
-      <div class="controls">
-        <button class="start-pause">Start</button>
-        <button class="done">Done</button>
-        <button class="reset" title="Reset"><i class="fas fa-redo"></i></button>
-      </div>
-
-      <!-- Edit and Report Buttons -->
-      <div class="side-buttons">
-        <button class="edit" title="تعديل"><i class="fas fa-edit"></i></button>
-        <button class="report" title="التقرير"><i class="fas fa-file-alt"></i></button>
-        <button class="theme-toggle" title="الوضع"><i class="fas fa-moon"></i></button>
-      </div>
-
-      <!-- Reset Confirmation Modal -->
-      <div class="modal" id="reset-modal">
-        <div class="modal-content">
-          <h3>هل أنت متأكد من إعادة التعيين؟</h3>
-          <div class="modal-buttons">
-            <button class="confirm" onclick="confirmReset()">✅</button>
-            <button class="cancel" onclick="cancelReset()">❌</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Edit Task Name Modal -->
-      <div class="modal" id="edit-modal">
-        <div class="modal-content">
-          <h3>تعديل اسم المهمة</h3>
-          <input type="text" id="new-task-name" placeholder="أدخل اسم المهمة الجديد">
-          <div class="modal-buttons">
-            <button id="save-edit">حفظ</button>
-            <button id="cancel-edit">إلغاء</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Report Modal -->
-      <div class="modal" id="report-modal">
-        <div class="modal-content">
-          <h3>تقرير المهام - <span id="report-date"></span></h3>
-          <pre id="report-content"></pre>
-          <div class="modal-buttons">
-            <button id="close-report">إغلاق</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Animation Elements -->
-  <div id="celebration-animation"></div>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
+
 </html>
