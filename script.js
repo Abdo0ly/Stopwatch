@@ -18,6 +18,8 @@ const reportContent = document.getElementById('report-content');
 const closeReportBtn = document.getElementById('close-report');
 const reportDate = document.getElementById('report-date');
 const celebrationAnimation = document.getElementById('celebration-animation');
+const resetAllBtn = document.querySelector('.reset-all');
+const resetAllModal = document.getElementById('reset-all-modal');
 
 // Stopwatch Variables
 let isRunning = false;
@@ -307,3 +309,54 @@ switchTask(0);
 function saveTasks() {
     localStorage.setItem('tasks', JSON.stringify(tasks));
 }
+
+// دالة إعادة تعيين كل المهام
+function resetAllTasks() {
+    // إيقاف الستوب واتش إذا كان يعمل
+    if (isRunning) {
+        clearInterval(interval);
+        isRunning = false;
+    }
+
+    // إعادة تعيين المهام للوضع الافتراضي
+    tasks = [
+        { name: 'Task 1', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 2', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 3', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 4', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 5', time: 0, startTime: null, endTime: null, done: false }
+    ];
+
+    // تحديث localStorage
+    saveTasks();
+
+    // إعادة تعيين الواجهة
+    elapsedTime = 0;
+    updateStopwatch();
+    startPauseBtn.textContent = 'Start';
+    doneBtn.classList.remove('hidden');
+
+    // تحديث أسماء المهام في الشريط الجانبي
+    taskTabs.forEach((tab, index) => {
+        tab.textContent = tasks[index].name;
+    });
+
+    // تحديث المهمة الحالية
+    taskName.textContent = tasks[currentTaskIndex].name;
+
+    // إغلاق Modal
+    resetAllModal.style.display = 'none';
+}
+
+function confirmResetAll() {
+    resetAllTasks();
+}
+
+function cancelResetAll() {
+    resetAllModal.style.display = 'none';
+}
+
+// إضافة Event Listener للزر
+resetAllBtn.addEventListener('click', () => {
+    resetAllModal.style.display = 'flex';
+});
