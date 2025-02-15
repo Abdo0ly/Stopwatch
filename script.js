@@ -40,6 +40,9 @@ let tasks = JSON.parse(localStorage.getItem('tasks')) || defaultTasks;
 
 let currentTaskIndex = 0;
 
+// إضافة في بداية الملف مع باقي المتغيرات
+const currentTheme = localStorage.getItem('theme');
+
 // Update Stopwatch Display
 function updateStopwatch() {
     const hours = Math.floor(elapsedTime / 3600000);
@@ -274,16 +277,32 @@ function toggleTheme() {
         document.body.classList.add('modern-mode');
         themeToggleBtn.innerHTML = '<i class="fas fa-palette"></i>';
         themeToggleBtn.title = 'الوضع العادي';
+        localStorage.setItem('theme', 'modern');
     } else if (document.body.classList.contains('modern-mode')) {
         // من الحديث إلى العادي
         document.body.classList.remove('modern-mode');
         themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
         themeToggleBtn.title = 'الوضع الداكن';
+        localStorage.setItem('theme', 'light');
     } else {
         // من العادي إلى الداكن
         document.body.classList.add('dark-mode');
         themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
         themeToggleBtn.title = 'الوضع الحديث';
+        localStorage.setItem('theme', 'dark');
+    }
+}
+
+// إضافة كود تهيئة الوضع عند تحميل الصفحة (قبل نهاية الملف)
+if (currentTheme) {
+    if (currentTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        themeToggleBtn.title = 'الوضع الحديث';
+    } else if (currentTheme === 'modern') {
+        document.body.classList.add('modern-mode');
+        themeToggleBtn.innerHTML = '<i class="fas fa-palette"></i>';
+        themeToggleBtn.title = 'الوضع العادي';
     }
 }
 
