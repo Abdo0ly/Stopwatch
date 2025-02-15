@@ -192,6 +192,25 @@ body.dark-mode .main-content .side-buttons button {
 }
 
 
+/* إضافة ستايل لزر Reset All */
+
+.main-content .side-buttons button.reset-all {
+    color: #f44336;
+}
+
+.main-content .side-buttons button.reset-all::after {
+    content: "إعادة تعيين الكل";
+}
+
+body.dark-mode .main-content .side-buttons button.reset-all {
+    color: #ff6b6b;
+}
+
+body.modern-mode .main-content .side-buttons button.reset-all {
+    color: #8B4513;
+}
+
+
 /* Modal Styles */
 
 .modal {
