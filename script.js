@@ -252,9 +252,15 @@ function switchTask(index) {
         isRunning = false;
     }
 
+    // حفظ الوقت المنقضي للمهمة الحالية قبل التبديل
+    tasks[currentTaskIndex].time = elapsedTime;
+    saveTasks();
+
     currentTaskIndex = index;
     taskName.textContent = tasks[currentTaskIndex].name;
-    elapsedTime = tasks[currentTaskIndex].time || 0;
+
+    // استعادة الوقت المنقضي للمهمة الجديدة
+    elapsedTime = tasks[currentTaskIndex].time;
     updateStopwatch();
 
     startPauseBtn.textContent = 'Start';
