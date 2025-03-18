@@ -82,15 +82,9 @@ function markTaskDone() {
         isRunning = false;
         startPauseBtn.textContent = 'Start';
     }
-
-    // تخزين الوقت النهائي للمهمة
     tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
-
-    // تخزين الوقت المنقضي بدون مضاعفة
-    tasks[currentTaskIndex].time = elapsedTime;
+    tasks[currentTaskIndex].time += elapsedTime;
     tasks[currentTaskIndex].done = true;
-    tasks[currentTaskIndex].isRunning = false;
-
     saveTasks(); // حفظ البيانات
     celebrate();
 }
@@ -251,45 +245,25 @@ function closeReport() {
 
 // Switch Task
 function switchTask(index) {
-    // إذا كان المؤقت يعمل، قم بإيقافه وحفظ الوقت المنقضي
     if (isRunning) {
         clearInterval(interval);
         tasks[currentTaskIndex].time = elapsedTime;
-        tasks[currentTaskIndex].isRunning = isRunning;
         saveTasks();
+        isRunning = false;
     }
 
     // حفظ الوقت المنقضي للمهمة الحالية قبل التبديل
     tasks[currentTaskIndex].time = elapsedTime;
-    tasks[currentTaskIndex].isRunning = isRunning;
     saveTasks();
 
-    // تغيير المهمة الحالية
     currentTaskIndex = index;
     taskName.textContent = tasks[currentTaskIndex].name;
 
     // استعادة الوقت المنقضي للمهمة الجديدة
     elapsedTime = tasks[currentTaskIndex].time;
-    isRunning = tasks[currentTaskIndex].isRunning;
-
-    // تحديث عرض الوقت
     updateStopwatch();
 
-    // إذا كانت المهمة الجديدة في حالة تشغيل، قم بتشغيل المؤقت
-    if (isRunning) {
-        startTime = Date.now() - elapsedTime;
-        interval = setInterval(() => {
-            elapsedTime = Date.now() - startTime;
-            updateStopwatch();
-            tasks[currentTaskIndex].time = elapsedTime;
-            saveTasks();
-        }, 1000);
-        startPauseBtn.textContent = 'Pause';
-    } else {
-        startPauseBtn.textContent = 'Start';
-    }
-
-    // تحديث واجهة المستخدم
+    startPauseBtn.textContent = 'Start';
     taskTabs.forEach((tab, i) => {
         tab.classList.toggle('active', i === index);
         tab.textContent = tasks[i].name;
@@ -371,11 +345,11 @@ function resetAllTasks() {
 
     // إعادة تعيين المهام للوضع الافتراضي
     tasks = [
-        { name: 'Task 1', time: 0, startTime: null, endTime: null, done: false, isRunning: false },
-        { name: 'Task 2', time: 0, startTime: null, endTime: null, done: false, isRunning: false },
-        { name: 'Task 3', time: 0, startTime: null, endTime: null, done: false, isRunning: false },
-        { name: 'Task 4', time: 0, startTime: null, endTime: null, done: false, isRunning: false },
-        { name: 'Task 5', time: 0, startTime: null, endTime: null, done: false, isRunning: false }
+        { name: 'Task 1', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 2', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 3', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 4', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 5', time: 0, startTime: null, endTime: null, done: false }
     ];
 
     // تحديث localStorage
