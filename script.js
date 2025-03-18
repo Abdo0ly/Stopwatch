@@ -83,16 +83,19 @@ function markTaskDone() {
         startPauseBtn.textContent = 'Start';
     }
 
-    // تخزين الوقت النهائي للمهمة
     tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
-
-    // تخزين الوقت المنقضي بدون مضاعفة
     tasks[currentTaskIndex].time = elapsedTime;
     tasks[currentTaskIndex].done = true;
     tasks[currentTaskIndex].isRunning = false;
 
-    saveTasks(); // حفظ البيانات
+    // حفظ البيانات في localStorage مع timestamp
+    saveTasks();
+
+    // إضافة نسخة احتياطية
+    saveBackup();
+
     celebrate();
+    doneBtn.classList.add('hidden');
 }
 
 // Celebration Animation
@@ -251,7 +254,6 @@ function closeReport() {
 
 // Switch Task
 function switchTask(index) {
-    // إذا كان المؤقت يعمل، قم بإيقافه وحفظ الوقت المنقضي
     if (isRunning) {
         clearInterval(interval);
         tasks[currentTaskIndex].time = elapsedTime;
@@ -259,37 +261,17 @@ function switchTask(index) {
         saveTasks();
     }
 
-    // حفظ الوقت المنقضي للمهمة الحالية قبل التبديل
-    tasks[currentTaskIndex].time = elapsedTime;
-    tasks[currentTaskIndex].isRunning = isRunning;
-    saveTasks();
-
-    // تغيير المهمة الحالية
     currentTaskIndex = index;
     taskName.textContent = tasks[currentTaskIndex].name;
 
-    // استعادة الوقت المنقضي للمهمة الجديدة
-    elapsedTime = tasks[currentTaskIndex].time;
-    isRunning = tasks[currentTaskIndex].isRunning;
+    // استعادة الوقت المخزن للمهمة
+    elapsedTime = tasks[currentTaskIndex].time || 0;
+    isRunning = false; // دائماً نبدأ بحالة إيقاف عند التبديل
+    startPauseBtn.textContent = 'Start';
 
     // تحديث عرض الوقت
     updateStopwatch();
 
-    // إذا كانت المهمة الجديدة في حالة تشغيل، قم بتشغيل المؤقت
-    if (isRunning) {
-        startTime = Date.now() - elapsedTime;
-        interval = setInterval(() => {
-            elapsedTime = Date.now() - startTime;
-            updateStopwatch();
-            tasks[currentTaskIndex].time = elapsedTime;
-            saveTasks();
-        }, 1000);
-        startPauseBtn.textContent = 'Pause';
-    } else {
-        startPauseBtn.textContent = 'Start';
-    }
-
-    // تحديث واجهة المستخدم
     taskTabs.forEach((tab, i) => {
         tab.classList.toggle('active', i === index);
         tab.textContent = tasks[i].name;
@@ -356,10 +338,80 @@ taskTabs.forEach((tab, index) => {
 // Initialize First Task
 switchTask(0);
 
-// دالة لحفظ البيانات في localStorage
+// إضافة دوال جديدة للتخزين والاسترجاع
 function saveTasks() {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    const saveData = {
+        tasks: tasks,
+        timestamp: new Date().getTime(),
+        version: '1.0'
+    };
+    try {
+        localStorage.setItem('tasks', JSON.stringify(saveData));
+        localStorage.setItem('lastSave', new Date().getTime());
+    } catch (e) {
+        console.error('Error saving to localStorage:', e);
+    }
 }
+
+function saveBackup() {
+    const backupData = {
+        tasks: tasks,
+        timestamp: new Date().getTime(),
+        version: '1.0'
+    };
+    try {
+        localStorage.setItem('tasks_backup', JSON.stringify(backupData));
+    } catch (e) {
+        console.error('Error saving backup:', e);
+    }
+}
+
+function loadTasks() {
+    try {
+        // محاولة تحميل البيانات الرئيسية
+        const savedData = localStorage.getItem('tasks');
+        const backupData = localStorage.getItem('tasks_backup');
+
+        if (savedData) {
+            const parsed = JSON.parse(savedData);
+            if (parsed.tasks && parsed.timestamp) {
+                tasks = parsed.tasks;
+                return true;
+            }
+        }
+
+        // محاولة استخدام النسخة الاحتياطية إذا فشل التحميل الرئيسي
+        if (backupData) {
+            const parsedBackup = JSON.parse(backupData);
+            if (parsedBackup.tasks && parsedBackup.timestamp) {
+                tasks = parsedBackup.tasks;
+                return true;
+            }
+        }
+
+        // استخدام البيانات الافتراضية إذا فشل كل شيء
+        tasks = defaultTasks;
+        return false;
+    } catch (e) {
+        console.error('Error loading tasks:', e);
+        tasks = defaultTasks;
+        return false;
+    }
+}
+
+// تعديل التهيئة الأولية للتطبيق
+document.addEventListener('DOMContentLoaded', function() {
+    loadTasks();
+    switchTask(0);
+
+    // إضافة مراقب للتغييرات في localStorage
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'tasks') {
+            loadTasks();
+            switchTask(currentTaskIndex);
+        }
+    });
+});
 
 // دالة إعادة تعيين كل المهام
 function resetAllTasks() {
