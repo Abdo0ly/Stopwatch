@@ -21,7 +21,7 @@ const celebrationAnimation = document.getElementById('celebration-animation');
 const resetAllBtn = document.querySelector('.reset-all');
 const resetAllModal = document.getElementById('reset-all-modal');
 
-// إضافة في بداية الملف
+// App State
 const APP_STATE = {
     isRunning: false,
     startTime: 0,
@@ -30,7 +30,7 @@ const APP_STATE = {
     interval: null
 };
 
-// تعديل متغير المهام ليقرأ من localStorage إذا وجد، وإلا يستخدم القيم الافتراضية
+// Default Tasks
 const defaultTasks = [
     { name: 'Task 1', time: 0, startTime: null, endTime: null, done: false },
     { name: 'Task 2', time: 0, startTime: null, endTime: null, done: false },
@@ -39,9 +39,129 @@ const defaultTasks = [
     { name: 'Task 5', time: 0, startTime: null, endTime: null, done: false },
 ];
 
-let tasks = JSON.parse(localStorage.getItem('tasks')) || defaultTasks;
+// Storage Functions
+function isStorageAvailable() {
+    try {
+        localStorage.setItem('test', 'test');
+        localStorage.removeItem('test');
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
 
-// إضافة في بداية الملف مع باقي المتغيرات
+function saveTasks() {
+    if (!isStorageAvailable()) return;
+    try {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    } catch (error) {
+        console.error('Error saving tasks:', error);
+    }
+}
+
+function loadTasks() {
+    try {
+        const savedTasks = localStorage.getItem('tasks');
+        return savedTasks ? JSON.parse(savedTasks) : [...defaultTasks];
+    } catch (error) {
+        console.error('Error loading tasks:', error);
+        return [...defaultTasks];
+    }
+}
+
+// Initialize tasks
+let tasks = loadTasks();
+
+// Core Functions
+function updateStopwatch() {
+    const hours = Math.floor(APP_STATE.elapsedTime / 3600000);
+    const minutes = Math.floor((APP_STATE.elapsedTime % 3600000) / 60000);
+    const seconds = Math.floor((APP_STATE.elapsedTime % 60000) / 1000);
+    stopwatch.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function updateUIState() {
+    updateStopwatch();
+    startPauseBtn.textContent = APP_STATE.isRunning ? 'Pause' : 'Start';
+    doneBtn.classList.toggle('hidden', tasks[APP_STATE.currentTaskIndex].done);
+    taskTabs.forEach((tab, index) => {
+        tab.textContent = tasks[index].name;
+        tab.classList.toggle('active', index === APP_STATE.currentTaskIndex);
+    });
+    taskName.textContent = tasks[APP_STATE.currentTaskIndex].name;
+}
+
+// Event Handlers
+function toggleStopwatch() {
+    if (!APP_STATE.isRunning) {
+        APP_STATE.startTime = Date.now() - APP_STATE.elapsedTime;
+        APP_STATE.interval = setInterval(() => {
+            APP_STATE.elapsedTime = Date.now() - APP_STATE.startTime;
+            updateStopwatch();
+            tasks[APP_STATE.currentTaskIndex].time = APP_STATE.elapsedTime;
+            saveTasks();
+        }, 1000);
+        if (!tasks[APP_STATE.currentTaskIndex].startTime) {
+            tasks[APP_STATE.currentTaskIndex].startTime = new Date().toLocaleTimeString('ar-EG');
+        }
+    } else {
+        clearInterval(APP_STATE.interval);
+        tasks[APP_STATE.currentTaskIndex].time = APP_STATE.elapsedTime;
+    }
+    APP_STATE.isRunning = !APP_STATE.isRunning;
+    startPauseBtn.textContent = APP_STATE.isRunning ? 'Pause' : 'Start';
+    saveTasks();
+}
+
+function switchTask(index) {
+    if (APP_STATE.isRunning) {
+        clearInterval(APP_STATE.interval);
+        tasks[APP_STATE.currentTaskIndex].time = APP_STATE.elapsedTime;
+    }
+    APP_STATE.currentTaskIndex = index;
+    APP_STATE.elapsedTime = tasks[index].time || 0;
+    APP_STATE.isRunning = false;
+    updateUIState();
+    saveTasks();
+}
+
+// Event Listeners Setup
+function setupEventListeners() {
+    startPauseBtn.addEventListener('click', toggleStopwatch);
+    doneBtn.addEventListener('click', markTaskDone);
+    resetBtn.addEventListener('click', () => resetModal.style.display = 'flex');
+    editBtn.addEventListener('click', editTaskName);
+    reportBtn.addEventListener('click', showReport);
+    themeToggleBtn.addEventListener('click', toggleTheme);
+
+    document.querySelector('.confirm') ?.addEventListener('click', confirmReset);
+    document.querySelector('.cancel') ?.addEventListener('click', cancelReset);
+    saveEditBtn.addEventListener('click', saveTaskName);
+    cancelEditBtn.addEventListener('click', cancelEdit);
+    closeReportBtn.addEventListener('click', closeReport);
+
+    taskTabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => switchTask(index));
+    });
+
+    resetAllBtn.addEventListener('click', () => resetAllModal.style.display = 'flex');
+    document.querySelector('#reset-all-modal .confirm') ?.addEventListener('click', confirmResetAll);
+    document.querySelector('#reset-all-modal .cancel') ?.addEventListener('click', cancelResetAll);
+}
+
+// Initialize App
+function initializeApp() {
+    tasks = loadTasks();
+    APP_STATE.elapsedTime = tasks[APP_STATE.currentTaskIndex].time || 0;
+    setupEventListeners();
+    updateUIState();
+    initializeTheme();
+}
+
+// Start App
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+// إضافة في بداية الملف
 const currentTheme = localStorage.getItem('theme');
 
 // إضافة في بداية الملف
@@ -274,25 +394,6 @@ function closeReport() {
     reportModal.style.display = 'none';
 }
 
-// Switch Task
-function switchTask(index) {
-    try {
-        if (APP_STATE.isRunning) {
-            clearInterval(APP_STATE.interval);
-            tasks[APP_STATE.currentTaskIndex].time = APP_STATE.elapsedTime;
-        }
-
-        APP_STATE.currentTaskIndex = index;
-        APP_STATE.elapsedTime = tasks[index].time || 0;
-        APP_STATE.isRunning = false;
-
-        updateUIState();
-        saveTasks();
-    } catch (error) {
-        console.error('Error in switchTask:', error);
-    }
-}
-
 // Toggle Theme
 function toggleTheme() {
     if (document.body.classList.contains('dark-mode')) {
@@ -330,64 +431,6 @@ if (currentTheme) {
     }
 }
 
-// تعديل دالة setupEventListeners
-function setupEventListeners() {
-    // إزالة كل الـ event listeners القديمة أولاً
-    function removeOldListeners(element, eventType, handler) {
-        element ? .removeEventListener(eventType, handler);
-    }
-
-    // إضافة الـ event listeners الجديدة
-    function addNewListeners() {
-        startPauseBtn ? .addEventListener('click', toggleStopwatch);
-        doneBtn ? .addEventListener('click', markTaskDone);
-        resetBtn ? .addEventListener('click', () => {
-            resetModal.style.display = 'flex';
-        });
-        editBtn ? .addEventListener('click', editTaskName);
-        reportBtn ? .addEventListener('click', showReport);
-        themeToggleBtn ? .addEventListener('click', toggleTheme);
-        saveEditBtn ? .addEventListener('click', saveTaskName);
-        cancelEditBtn ? .addEventListener('click', cancelEdit);
-        closeReportBtn ? .addEventListener('click', closeReport);
-        resetAllBtn ? .addEventListener('click', () => {
-            resetAllModal.style.display = 'flex';
-        });
-
-        // إضافة event listeners للتأكيد على إعادة التعيين
-        document.querySelector('.confirm') ? .addEventListener('click', confirmReset);
-        document.querySelector('.cancel') ? .addEventListener('click', cancelReset);
-
-        // إضافة event listeners للمهام
-        taskTabs.forEach((tab, index) => {
-            tab ? .addEventListener('click', () => switchTask(index));
-        });
-    }
-
-    // تنفيذ الإضافة
-    addNewListeners();
-}
-
-// تعديل دالة initializeApp
-function initializeApp() {
-    try {
-        // تحميل البيانات أولاً
-        loadTasks();
-
-        // تهيئة APP_STATE
-        APP_STATE.elapsedTime = tasks[APP_STATE.currentTaskIndex].time || 0;
-
-        // تحديث الواجهة
-        updateUIState();
-
-        // إضافة event listeners
-        addEventListeners();
-
-    } catch (error) {
-        console.error('Error in initializeApp:', error);
-    }
-}
-
 // إضافة دالة جديدة لتهيئة الثيم
 function initializeTheme() {
     const currentTheme = localStorage.getItem('theme');
@@ -400,52 +443,6 @@ function initializeTheme() {
         themeToggleBtn.innerHTML = '<i class="fas fa-palette"></i>';
         themeToggleBtn.title = 'الوضع العادي';
     }
-}
-
-// حذف event listeners القديمة من نهاية الملف
-// وإضافة فقط مستمع تحميل الصفحة
-document.addEventListener('DOMContentLoaded', initializeApp);
-
-// إضافة دالة جديدة لتحديث حالة الواجهة
-function updateUIState() {
-    // تحديث عرض الوقت
-    updateStopwatch();
-
-    // تحديث حالة الأزرار
-    startPauseBtn.textContent = APP_STATE.isRunning ? 'Pause' : 'Start';
-    doneBtn.classList.toggle('hidden', tasks[APP_STATE.currentTaskIndex].done);
-
-    // تحديث أسماء المهام في الشريط الجانبي
-    taskTabs.forEach((tab, index) => {
-        tab.textContent = tasks[index].name;
-        tab.classList.toggle('active', index === APP_STATE.currentTaskIndex);
-    });
-
-    // تحديث اسم المهمة الحالية
-    taskName.textContent = tasks[APP_STATE.currentTaskIndex].name;
-}
-
-// إضافة دالة جديدة لإعداد event listeners
-function setupEventListeners() {
-    // إزالة event listeners القديمة لتجنب التكرار
-    startPauseBtn.removeEventListener('click', toggleStopwatch);
-    doneBtn.removeEventListener('click', markTaskDone);
-    resetBtn.removeEventListener('click', resetStopwatch);
-    editBtn.removeEventListener('click', editTaskName);
-    reportBtn.removeEventListener('click', showReport);
-
-    // إضافة event listeners جديدة
-    startPauseBtn.addEventListener('click', toggleStopwatch);
-    doneBtn.addEventListener('click', markTaskDone);
-    resetBtn.addEventListener('click', resetStopwatch);
-    editBtn.addEventListener('click', editTaskName);
-    reportBtn.addEventListener('click', showReport);
-
-    // إعادة تعيين event listeners للمهام
-    taskTabs.forEach((tab, index) => {
-        tab.removeEventListener('click', () => switchTask(index));
-        tab.addEventListener('click', () => switchTask(index));
-    });
 }
 
 // دالة إعادة تعيين كل المهام
@@ -501,33 +498,6 @@ window.addEventListener('storage', function(e) {
     }
 });
 
-// تعديل طريقة تخزين واسترجاع البيانات
-function saveTasks() {
-    if (!isStorageAvailable()) {
-        console.warn('localStorage is not available');
-        return;
-    }
-    try {
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-    } catch (error) {
-        console.error('Error saving tasks:', error);
-    }
-}
-
-function loadTasks() {
-    try {
-        const savedTasks = localStorage.getItem('tasks');
-        if (savedTasks) {
-            tasks = JSON.parse(savedTasks);
-        } else {
-            tasks = [...defaultTasks];
-        }
-    } catch (error) {
-        console.error('Error loading tasks:', error);
-        tasks = [...defaultTasks];
-    }
-}
-
 // تبسيط إضافة event listeners
 function addEventListeners() {
     startPauseBtn.addEventListener('click', toggleStopwatch);
@@ -538,8 +508,8 @@ function addEventListeners() {
     themeToggleBtn.addEventListener('click', toggleTheme);
 
     // Modal buttons
-    document.querySelector('.confirm') ? .addEventListener('click', confirmReset);
-    document.querySelector('.cancel') ? .addEventListener('click', cancelReset);
+    document.querySelector('.confirm') ?.addEventListener('click', confirmReset);
+    document.querySelector('.cancel') ?.addEventListener('click', cancelReset);
     saveEditBtn.addEventListener('click', saveTaskName);
     cancelEditBtn.addEventListener('click', cancelEdit);
     closeReportBtn.addEventListener('click', closeReport);
@@ -551,6 +521,6 @@ function addEventListeners() {
 
     // Reset all
     resetAllBtn.addEventListener('click', () => resetAllModal.style.display = 'flex');
-    document.querySelector('#reset-all-modal .confirm') ? .addEventListener('click', confirmResetAll);
-    document.querySelector('#reset-all-modal .cancel') ? .addEventListener('click', cancelResetAll);
+    document.querySelector('#reset-all-modal .confirm') ?.addEventListener('click', confirmResetAll);
+    document.querySelector('#reset-all-modal .cancel') ?.addEventListener('click', cancelResetAll);
 }
