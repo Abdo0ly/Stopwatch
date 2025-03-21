@@ -21,16 +21,13 @@ const celebrationAnimation = document.getElementById('celebration-animation');
 const resetAllBtn = document.querySelector('.reset-all');
 const resetAllModal = document.getElementById('reset-all-modal');
 
-// App State
-const APP_STATE = {
-    isRunning: false,
-    startTime: 0,
-    elapsedTime: 0,
-    currentTaskIndex: 0,
-    interval: null
-};
+// Stopwatch Variables
+let isRunning = false;
+let startTime = 0;
+let elapsedTime = 0;
+let interval;
 
-// Default Tasks
+// تعديل متغير المهام ليقرأ من localStorage إذا وجد، وإلا يستخدم القيم الافتراضية
 const defaultTasks = [
     { name: 'Task 1', time: 0, startTime: null, endTime: null, done: false },
     { name: 'Task 2', time: 0, startTime: null, endTime: null, done: false },
@@ -39,224 +36,57 @@ const defaultTasks = [
     { name: 'Task 5', time: 0, startTime: null, endTime: null, done: false },
 ];
 
-// Storage Functions
-function isStorageAvailable() {
-    try {
-        localStorage.setItem('test', 'test');
-        localStorage.removeItem('test');
-        return true;
-    } catch (e) {
-        return false;
-    }
-}
+let tasks = JSON.parse(localStorage.getItem('tasks')) || defaultTasks;
 
-function saveTasks() {
-    if (!isStorageAvailable()) return;
-    try {
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-    } catch (error) {
-        console.error('Error saving tasks:', error);
-    }
-}
+let currentTaskIndex = 0;
 
-function loadTasks() {
-    try {
-        const savedTasks = localStorage.getItem('tasks');
-        return savedTasks ? JSON.parse(savedTasks) : [...defaultTasks];
-    } catch (error) {
-        console.error('Error loading tasks:', error);
-        return [...defaultTasks];
-    }
-}
-
-// Initialize tasks
-let tasks = loadTasks();
-
-// Core Functions
-function updateStopwatch() {
-    const hours = Math.floor(APP_STATE.elapsedTime / 3600000);
-    const minutes = Math.floor((APP_STATE.elapsedTime % 3600000) / 60000);
-    const seconds = Math.floor((APP_STATE.elapsedTime % 60000) / 1000);
-    stopwatch.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
-function updateUIState() {
-    updateStopwatch();
-    startPauseBtn.textContent = APP_STATE.isRunning ? 'Pause' : 'Start';
-    doneBtn.classList.toggle('hidden', tasks[APP_STATE.currentTaskIndex].done);
-    taskTabs.forEach((tab, index) => {
-        tab.textContent = tasks[index].name;
-        tab.classList.toggle('active', index === APP_STATE.currentTaskIndex);
-    });
-    taskName.textContent = tasks[APP_STATE.currentTaskIndex].name;
-}
-
-// Event Handlers
-function toggleStopwatch() {
-    if (!APP_STATE.isRunning) {
-        APP_STATE.startTime = Date.now() - APP_STATE.elapsedTime;
-        APP_STATE.interval = setInterval(() => {
-            APP_STATE.elapsedTime = Date.now() - APP_STATE.startTime;
-            updateStopwatch();
-            tasks[APP_STATE.currentTaskIndex].time = APP_STATE.elapsedTime;
-            saveTasks();
-        }, 1000);
-        if (!tasks[APP_STATE.currentTaskIndex].startTime) {
-            tasks[APP_STATE.currentTaskIndex].startTime = new Date().toLocaleTimeString('ar-EG');
-        }
-    } else {
-        clearInterval(APP_STATE.interval);
-        tasks[APP_STATE.currentTaskIndex].time = APP_STATE.elapsedTime;
-    }
-    APP_STATE.isRunning = !APP_STATE.isRunning;
-    startPauseBtn.textContent = APP_STATE.isRunning ? 'Pause' : 'Start';
-    saveTasks();
-}
-
-function switchTask(index) {
-    if (APP_STATE.isRunning) {
-        clearInterval(APP_STATE.interval);
-        tasks[APP_STATE.currentTaskIndex].time = APP_STATE.elapsedTime;
-    }
-    APP_STATE.currentTaskIndex = index;
-    APP_STATE.elapsedTime = tasks[index].time || 0;
-    APP_STATE.isRunning = false;
-    updateUIState();
-    saveTasks();
-}
-
-// Event Listeners Setup
-function setupEventListeners() {
-    startPauseBtn.addEventListener('click', toggleStopwatch);
-    doneBtn.addEventListener('click', markTaskDone);
-    resetBtn.addEventListener('click', () => resetModal.style.display = 'flex');
-    editBtn.addEventListener('click', editTaskName);
-    reportBtn.addEventListener('click', showReport);
-    themeToggleBtn.addEventListener('click', toggleTheme);
-
-    document.querySelector('.confirm') ? .addEventListener('click', confirmReset);
-    document.querySelector('.cancel') ? .addEventListener('click', cancelReset);
-    saveEditBtn.addEventListener('click', saveTaskName);
-    cancelEditBtn.addEventListener('click', cancelEdit);
-    closeReportBtn.addEventListener('click', closeReport);
-
-    taskTabs.forEach((tab, index) => {
-        tab.addEventListener('click', () => switchTask(index));
-    });
-
-    resetAllBtn.addEventListener('click', () => resetAllModal.style.display = 'flex');
-    document.querySelector('#reset-all-modal .confirm') ? .addEventListener('click', confirmResetAll);
-    document.querySelector('#reset-all-modal .cancel') ? .addEventListener('click', cancelResetAll);
-}
-
-// Initialize App
-function initializeApp() {
-    try {
-        // تحميل البيانات أولاً
-        tasks = loadTasks();
-
-        // التأكد من وجود المهام قبل تعيين الوقت
-        if (tasks && tasks.length > 0) {
-            APP_STATE.elapsedTime = tasks[APP_STATE.currentTaskIndex] ? .time || 0;
-        } else {
-            // إذا لم تكن هناك مهام، نقوم بتهيئة المهام الافتراضية
-            tasks = [...defaultTasks];
-            APP_STATE.elapsedTime = 0;
-        }
-
-        // تحديث الواجهة وإضافة event listeners
-        updateUIState();
-        setupEventListeners();
-        initializeTheme();
-    } catch (error) {
-        console.error('Error in initializeApp:', error);
-        // في حالة حدوث خطأ، نستخدم القيم الافتراضية
-        tasks = [...defaultTasks];
-        APP_STATE.elapsedTime = 0;
-        updateUIState();
-    }
-}
-
-// Start App
-document.addEventListener('DOMContentLoaded', initializeApp);
-
-// إضافة في بداية الملف
+// إضافة في بداية الملف مع باقي المتغيرات
 const currentTheme = localStorage.getItem('theme');
-
-// إضافة في بداية الملف
-function isStorageAvailable() {
-    try {
-        const test = '__storage_test__';
-        localStorage.setItem(test, test);
-        localStorage.removeItem(test);
-        return true;
-    } catch (e) {
-        return false;
-    }
-}
 
 // Update Stopwatch Display
 function updateStopwatch() {
-    const hours = Math.floor(APP_STATE.elapsedTime / 3600000);
-    const minutes = Math.floor((APP_STATE.elapsedTime % 3600000) / 60000);
-    const seconds = Math.floor((APP_STATE.elapsedTime % 60000) / 1000);
+    const hours = Math.floor(elapsedTime / 3600000);
+    const minutes = Math.floor((elapsedTime % 3600000) / 60000);
+    const seconds = Math.floor((elapsedTime % 60000) / 1000);
     stopwatch.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 // Start/Pause Stopwatch
 function toggleStopwatch() {
-    try {
-        if (!APP_STATE.isRunning) {
-            APP_STATE.startTime = Date.now() - APP_STATE.elapsedTime;
-            APP_STATE.interval = setInterval(() => {
-                APP_STATE.elapsedTime = Date.now() - APP_STATE.startTime;
-                updateStopwatch();
-                tasks[APP_STATE.currentTaskIndex].time = APP_STATE.elapsedTime;
-                saveTasks();
-            }, 1000);
-            startPauseBtn.textContent = 'Pause';
-            if (!tasks[APP_STATE.currentTaskIndex].startTime) {
-                tasks[APP_STATE.currentTaskIndex].startTime = new Date().toLocaleTimeString('ar-EG');
-            }
-        } else {
-            clearInterval(APP_STATE.interval);
-            startPauseBtn.textContent = 'Start';
-            tasks[APP_STATE.currentTaskIndex].time = APP_STATE.elapsedTime;
+    if (!isRunning) {
+        startTime = Date.now() - elapsedTime;
+        interval = setInterval(() => {
+            elapsedTime = Date.now() - startTime;
+            updateStopwatch();
+            tasks[currentTaskIndex].time = elapsedTime;
+            saveTasks();
+        }, 1000);
+        startPauseBtn.textContent = 'Pause';
+        if (!tasks[currentTaskIndex].startTime) {
+            tasks[currentTaskIndex].startTime = new Date().toLocaleTimeString('ar-EG');
         }
-
-        APP_STATE.isRunning = !APP_STATE.isRunning;
-        tasks[APP_STATE.currentTaskIndex].isRunning = APP_STATE.isRunning;
         saveTasks();
-    } catch (e) {
-        console.error('Error in toggleStopwatch:', e);
-        // في حالة حدوث خطأ، نحاول إيقاف المؤقت
-        clearInterval(APP_STATE.interval);
-        APP_STATE.isRunning = false;
-        startPauseBtn.textContent = 'Start';
+    } else {
+        clearInterval(interval);
+        startPauseBtn.textContent = 'Resume';
+        tasks[currentTaskIndex].time = elapsedTime;
+        saveTasks();
     }
+    isRunning = !isRunning;
 }
 
 // Done Button
 function markTaskDone() {
-    if (APP_STATE.isRunning) {
-        clearInterval(APP_STATE.interval);
-        APP_STATE.isRunning = false;
+    if (isRunning) {
+        clearInterval(interval);
+        isRunning = false;
         startPauseBtn.textContent = 'Start';
     }
-
-    tasks[APP_STATE.currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
-    tasks[APP_STATE.currentTaskIndex].time = APP_STATE.elapsedTime;
-    tasks[APP_STATE.currentTaskIndex].done = true;
-    tasks[APP_STATE.currentTaskIndex].isRunning = false;
-
-    // حفظ البيانات في localStorage مع timestamp
-    saveTasks();
-
-    // إضافة نسخة احتياطية
-    saveBackup();
-
+    tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
+    tasks[currentTaskIndex].time += elapsedTime;
+    tasks[currentTaskIndex].done = true;
+    saveTasks(); // حفظ البيانات
     celebrate();
-    doneBtn.classList.add('hidden');
 }
 
 // Celebration Animation
@@ -346,15 +176,15 @@ function celebrate() {
 
 // Reset Stopwatch
 function resetStopwatch() {
-    clearInterval(APP_STATE.interval);
-    APP_STATE.elapsedTime = 0;
+    clearInterval(interval);
+    elapsedTime = 0;
     updateStopwatch();
-    APP_STATE.isRunning = false;
+    isRunning = false;
     startPauseBtn.textContent = 'Start';
-    tasks[APP_STATE.currentTaskIndex].time = 0;
-    tasks[APP_STATE.currentTaskIndex].startTime = null;
-    tasks[APP_STATE.currentTaskIndex].endTime = null;
-    tasks[APP_STATE.currentTaskIndex].done = false;
+    tasks[currentTaskIndex].time = 0;
+    tasks[currentTaskIndex].startTime = null;
+    tasks[currentTaskIndex].endTime = null;
+    tasks[currentTaskIndex].done = false;
     doneBtn.classList.remove('hidden');
     resetModal.style.display = 'none';
     saveTasks(); // حفظ البيانات
@@ -371,7 +201,7 @@ function cancelReset() {
 
 // Edit Task Name
 function editTaskName() {
-    newTaskNameInput.value = tasks[APP_STATE.currentTaskIndex].name;
+    newTaskNameInput.value = tasks[currentTaskIndex].name;
     editModal.style.display = 'flex';
 }
 
@@ -379,9 +209,9 @@ function editTaskName() {
 function saveTaskName() {
     const newName = newTaskNameInput.value.trim();
     if (newName) {
-        tasks[APP_STATE.currentTaskIndex].name = newName;
+        tasks[currentTaskIndex].name = newName;
         taskName.textContent = newName;
-        taskTabs[APP_STATE.currentTaskIndex].textContent = newName;
+        taskTabs[currentTaskIndex].textContent = newName;
         editModal.style.display = 'none';
         saveTasks(); // حفظ البيانات
     }
@@ -411,6 +241,32 @@ function showReport() {
 // Close Report
 function closeReport() {
     reportModal.style.display = 'none';
+}
+
+// Switch Task
+function switchTask(index) {
+    if (isRunning) {
+        clearInterval(interval);
+        tasks[currentTaskIndex].time = elapsedTime;
+        saveTasks();
+        isRunning = false;
+    }
+
+    currentTaskIndex = index;
+    taskName.textContent = tasks[currentTaskIndex].name;
+    elapsedTime = tasks[currentTaskIndex].time || 0;
+    updateStopwatch();
+
+    startPauseBtn.textContent = 'Start';
+    taskTabs.forEach((tab, i) => {
+        tab.classList.toggle('active', i === index);
+        tab.textContent = tasks[i].name;
+    });
+
+    resetModal.style.display = 'none';
+    editModal.style.display = 'none';
+    reportModal.style.display = 'none';
+    doneBtn.classList.toggle('hidden', tasks[currentTaskIndex].done);
 }
 
 // Toggle Theme
@@ -450,48 +306,62 @@ if (currentTheme) {
     }
 }
 
-// إضافة دالة جديدة لتهيئة الثيم
-function initializeTheme() {
-    const currentTheme = localStorage.getItem('theme');
-    if (currentTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-        themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-        themeToggleBtn.title = 'الوضع الحديث';
-    } else if (currentTheme === 'modern') {
-        document.body.classList.add('modern-mode');
-        themeToggleBtn.innerHTML = '<i class="fas fa-palette"></i>';
-        themeToggleBtn.title = 'الوضع العادي';
-    }
+// Event Listeners
+startPauseBtn.addEventListener('click', toggleStopwatch);
+doneBtn.addEventListener('click', markTaskDone);
+resetBtn.addEventListener('click', resetStopwatch);
+editBtn.addEventListener('click', editTaskName);
+reportBtn.addEventListener('click', showReport);
+themeToggleBtn.addEventListener('click', toggleTheme);
+saveEditBtn.addEventListener('click', saveTaskName);
+cancelEditBtn.addEventListener('click', cancelEdit);
+closeReportBtn.addEventListener('click', closeReport);
+
+taskTabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => switchTask(index));
+});
+
+// Initialize First Task
+switchTask(0);
+
+// دالة لحفظ البيانات في localStorage
+function saveTasks() {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
 // دالة إعادة تعيين كل المهام
 function resetAllTasks() {
-    // حفظ الثيم الحالي
-    const currentTheme = localStorage.getItem('theme');
-
-    // مسح كل البيانات من localStorage
-    localStorage.clear();
-
-    // إعادة تعيين الثيم
-    if (currentTheme) {
-        localStorage.setItem('theme', currentTheme);
+    // إيقاف الستوب واتش إذا كان يعمل
+    if (isRunning) {
+        clearInterval(interval);
+        isRunning = false;
     }
 
     // إعادة تعيين المهام للوضع الافتراضي
-    tasks = defaultTasks.map(task => ({...task }));
+    tasks = [
+        { name: 'Task 1', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 2', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 3', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 4', time: 0, startTime: null, endTime: null, done: false },
+        { name: 'Task 5', time: 0, startTime: null, endTime: null, done: false }
+    ];
 
-    // إيقاف الستوب واتش إذا كان يعمل
-    if (APP_STATE.isRunning) {
-        clearInterval(APP_STATE.interval);
-        APP_STATE.isRunning = false;
-    }
+    // تحديث localStorage
+    saveTasks();
 
-    // إعادة تعيين الحالة
-    APP_STATE.elapsedTime = 0;
-    APP_STATE.currentTaskIndex = 0;
+    // إعادة تعيين الواجهة
+    elapsedTime = 0;
+    updateStopwatch();
+    startPauseBtn.textContent = 'Start';
+    doneBtn.classList.remove('hidden');
 
-    // تحديث الواجهة
-    updateUIState();
+    // تحديث أسماء المهام في الشريط الجانبي
+    taskTabs.forEach((tab, index) => {
+        tab.textContent = tasks[index].name;
+    });
+
+    // تحديث المهمة الحالية
+    taskName.textContent = tasks[currentTaskIndex].name;
 
     // إغلاق Modal
     resetAllModal.style.display = 'none';
@@ -509,37 +379,3 @@ function cancelResetAll() {
 resetAllBtn.addEventListener('click', () => {
     resetAllModal.style.display = 'flex';
 });
-
-window.addEventListener('storage', function(e) {
-    if (e.key === 'tasks') {
-        loadTasks();
-        updateUIState();
-    }
-});
-
-// تبسيط إضافة event listeners
-function addEventListeners() {
-    startPauseBtn.addEventListener('click', toggleStopwatch);
-    doneBtn.addEventListener('click', markTaskDone);
-    resetBtn.addEventListener('click', () => resetModal.style.display = 'flex');
-    editBtn.addEventListener('click', editTaskName);
-    reportBtn.addEventListener('click', showReport);
-    themeToggleBtn.addEventListener('click', toggleTheme);
-
-    // Modal buttons
-    document.querySelector('.confirm') ? .addEventListener('click', confirmReset);
-    document.querySelector('.cancel') ? .addEventListener('click', cancelReset);
-    saveEditBtn.addEventListener('click', saveTaskName);
-    cancelEditBtn.addEventListener('click', cancelEdit);
-    closeReportBtn.addEventListener('click', closeReport);
-
-    // Task tabs
-    taskTabs.forEach((tab, index) => {
-        tab.addEventListener('click', () => switchTask(index));
-    });
-
-    // Reset all
-    resetAllBtn.addEventListener('click', () => resetAllModal.style.display = 'flex');
-    document.querySelector('#reset-all-modal .confirm') ? .addEventListener('click', confirmResetAll);
-    document.querySelector('#reset-all-modal .cancel') ? .addEventListener('click', cancelResetAll);
-}
