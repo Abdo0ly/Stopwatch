@@ -51,8 +51,79 @@ function updateStopwatch() {
     stopwatch.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-// Start/Pause Stopwatch
+// دالة للتحقق من صحة المهام وإعادة تهيئتها إذا كانت غير صالحة
+function validateAndFixTasks() {
+    try {
+        if (!Array.isArray(tasks) || tasks.length === 0) {
+            tasks = JSON.parse(JSON.stringify(defaultTasks));
+            saveTasks();
+        }
+
+        // التأكد من أن كل مهمة تحتوي على جميع الخصائص المطلوبة
+        tasks = tasks.map((task, index) => ({
+            name: task.name || `Task ${index + 1}`,
+            time: task.time || 0,
+            startTime: task.startTime || null,
+            endTime: task.endTime || null,
+            done: task.done || false
+        }));
+
+        saveTasks();
+    } catch (error) {
+        console.warn('تم اكتشاف خطأ في البيانات، جاري إعادة التهيئة...');
+        tasks = JSON.parse(JSON.stringify(defaultTasks));
+        saveTasks();
+    }
+}
+
+// تحديث دالة تبديل المهام
+function switchTask(index) {
+    validateAndFixTasks();
+
+    // التأكد من صحة المؤشر
+    if (index < 0 || index >= tasks.length) {
+        index = 0;
+    }
+
+    if (isRunning) {
+        clearInterval(interval);
+        tasks[currentTaskIndex].time = elapsedTime;
+        saveTasks();
+        isRunning = false;
+    }
+
+    currentTaskIndex = index;
+    taskName.textContent = tasks[currentTaskIndex].name;
+    elapsedTime = tasks[currentTaskIndex].time || 0;
+    updateStopwatch();
+
+    startPauseBtn.textContent = 'Start';
+    taskTabs.forEach((tab, i) => {
+        tab.classList.toggle('active', i === index);
+        tab.textContent = tasks[i].name;
+    });
+
+    doneBtn.classList.toggle('hidden', tasks[currentTaskIndex].done);
+
+    // إغلاق جميع النوافذ المنبثقة
+    resetModal.style.display = 'none';
+    editModal.style.display = 'none';
+    reportModal.style.display = 'none';
+}
+
+// تحديث دالة حفظ المهام
+function saveTasks() {
+    try {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    } catch (error) {
+        console.error('خطأ في حفظ البيانات:', error);
+    }
+}
+
+// تحديث دالة تشغيل/إيقاف الساعة
 function toggleStopwatch() {
+    validateAndFixTasks();
+
     if (!isRunning) {
         startTime = Date.now() - elapsedTime;
         interval = setInterval(() => {
@@ -222,51 +293,27 @@ function cancelEdit() {
     editModal.style.display = 'none';
 }
 
-// Show Report
+// تحديث دالة عرض التقرير
 function showReport() {
+    validateAndFixTasks();
+
     reportDate.textContent = new Date().toLocaleDateString('ar-EG');
     let report = '';
     tasks.forEach((task) => {
-        if (task.time > 0) { // عرض المهام التي تم العمل عليها فقط
+        if (task.time > 0) {
             const hours = Math.floor(task.time / 3600000);
             const minutes = Math.floor((task.time % 3600000) / 60000);
             const seconds = Math.floor((task.time % 60000) / 1000);
             report += `${task.name}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}\nبدأ: ${task.startTime || 'N/A'} - انتهى: ${task.endTime || 'N/A'}\n\n`;
         }
     });
-    reportContent.textContent = report;
+    reportContent.textContent = report || 'لا توجد مهام مكتملة بعد';
     reportModal.style.display = 'flex';
 }
 
 // Close Report
 function closeReport() {
     reportModal.style.display = 'none';
-}
-
-// Switch Task
-function switchTask(index) {
-    if (isRunning) {
-        clearInterval(interval);
-        tasks[currentTaskIndex].time = elapsedTime;
-        saveTasks();
-        isRunning = false;
-    }
-
-    currentTaskIndex = index;
-    taskName.textContent = tasks[currentTaskIndex].name;
-    elapsedTime = tasks[currentTaskIndex].time || 0;
-    updateStopwatch();
-
-    startPauseBtn.textContent = 'Start';
-    taskTabs.forEach((tab, i) => {
-        tab.classList.toggle('active', i === index);
-        tab.textContent = tasks[i].name;
-    });
-
-    resetModal.style.display = 'none';
-    editModal.style.display = 'none';
-    reportModal.style.display = 'none';
-    doneBtn.classList.toggle('hidden', tasks[currentTaskIndex].done);
 }
 
 // Toggle Theme
@@ -321,13 +368,19 @@ taskTabs.forEach((tab, index) => {
     tab.addEventListener('click', () => switchTask(index));
 });
 
-// Initialize First Task
-switchTask(0);
-
-// دالة لحفظ البيانات في localStorage
-function saveTasks() {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-}
+// تهيئة التطبيق
+window.addEventListener('load', () => {
+    try {
+        tasks = JSON.parse(localStorage.getItem('tasks')) || defaultTasks;
+        validateAndFixTasks();
+        switchTask(0);
+    } catch (error) {
+        console.error('خطأ في تحميل البيانات:', error);
+        tasks = JSON.parse(JSON.stringify(defaultTasks));
+        saveTasks();
+        switchTask(0);
+    }
+});
 
 // دالة إعادة تعيين كل المهام
 function resetAllTasks() {
