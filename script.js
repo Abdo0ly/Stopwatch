@@ -44,6 +44,18 @@ let tasks = JSON.parse(localStorage.getItem('tasks')) || defaultTasks;
 // إضافة في بداية الملف مع باقي المتغيرات
 const currentTheme = localStorage.getItem('theme');
 
+// إضافة في بداية الملف
+function isStorageAvailable() {
+    try {
+        const test = '__storage_test__';
+        localStorage.setItem(test, test);
+        localStorage.removeItem(test);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
 // Update Stopwatch Display
 function updateStopwatch() {
     const hours = Math.floor(APP_STATE.elapsedTime / 3600000);
@@ -268,23 +280,16 @@ function switchTask(index) {
         if (APP_STATE.isRunning) {
             clearInterval(APP_STATE.interval);
             tasks[APP_STATE.currentTaskIndex].time = APP_STATE.elapsedTime;
-            tasks[APP_STATE.currentTaskIndex].isRunning = false;
-            APP_STATE.isRunning = false;
-            saveTasks();
         }
 
         APP_STATE.currentTaskIndex = index;
         APP_STATE.elapsedTime = tasks[index].time || 0;
-        updateUIState();
-
-        saveTasks();
-    } catch (e) {
-        console.error('Error in switchTask:', e);
-        // في حالة حدوث خطأ، نحاول الاستعادة
-        APP_STATE.currentTaskIndex = index;
-        APP_STATE.elapsedTime = 0;
         APP_STATE.isRunning = false;
+
         updateUIState();
+        saveTasks();
+    } catch (error) {
+        console.error('Error in switchTask:', error);
     }
 }
 
@@ -366,23 +371,20 @@ function setupEventListeners() {
 // تعديل دالة initializeApp
 function initializeApp() {
     try {
-        // تحميل البيانات
+        // تحميل البيانات أولاً
         loadTasks();
 
-        // إعداد event listeners
-        setupEventListeners();
+        // تهيئة APP_STATE
+        APP_STATE.elapsedTime = tasks[APP_STATE.currentTaskIndex].time || 0;
 
         // تحديث الواجهة
         updateUIState();
 
-        // تهيئة الثيم
-        initializeTheme();
+        // إضافة event listeners
+        addEventListeners();
 
     } catch (error) {
         console.error('Error in initializeApp:', error);
-        // استعادة الحالة الافتراضية في حالة الخطأ
-        tasks = defaultTasks.map(task => ({...task }));
-        updateUIState();
     }
 }
 
@@ -498,3 +500,57 @@ window.addEventListener('storage', function(e) {
         updateUIState();
     }
 });
+
+// تعديل طريقة تخزين واسترجاع البيانات
+function saveTasks() {
+    if (!isStorageAvailable()) {
+        console.warn('localStorage is not available');
+        return;
+    }
+    try {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    } catch (error) {
+        console.error('Error saving tasks:', error);
+    }
+}
+
+function loadTasks() {
+    try {
+        const savedTasks = localStorage.getItem('tasks');
+        if (savedTasks) {
+            tasks = JSON.parse(savedTasks);
+        } else {
+            tasks = [...defaultTasks];
+        }
+    } catch (error) {
+        console.error('Error loading tasks:', error);
+        tasks = [...defaultTasks];
+    }
+}
+
+// تبسيط إضافة event listeners
+function addEventListeners() {
+    startPauseBtn.addEventListener('click', toggleStopwatch);
+    doneBtn.addEventListener('click', markTaskDone);
+    resetBtn.addEventListener('click', () => resetModal.style.display = 'flex');
+    editBtn.addEventListener('click', editTaskName);
+    reportBtn.addEventListener('click', showReport);
+    themeToggleBtn.addEventListener('click', toggleTheme);
+
+    // Modal buttons
+    document.querySelector('.confirm') ? .addEventListener('click', confirmReset);
+    document.querySelector('.cancel') ? .addEventListener('click', cancelReset);
+    saveEditBtn.addEventListener('click', saveTaskName);
+    cancelEditBtn.addEventListener('click', cancelEdit);
+    closeReportBtn.addEventListener('click', closeReport);
+
+    // Task tabs
+    taskTabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => switchTask(index));
+    });
+
+    // Reset all
+    resetAllBtn.addEventListener('click', () => resetAllModal.style.display = 'flex');
+    document.querySelector('#reset-all-modal .confirm') ? .addEventListener('click', confirmResetAll);
+    document.querySelector('#reset-all-modal .cancel') ? .addEventListener('click', cancelResetAll);
+}
