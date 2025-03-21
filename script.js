@@ -134,8 +134,8 @@ function setupEventListeners() {
     reportBtn.addEventListener('click', showReport);
     themeToggleBtn.addEventListener('click', toggleTheme);
 
-    document.querySelector('.confirm') ?.addEventListener('click', confirmReset);
-    document.querySelector('.cancel') ?.addEventListener('click', cancelReset);
+    document.querySelector('.confirm') ? .addEventListener('click', confirmReset);
+    document.querySelector('.cancel') ? .addEventListener('click', cancelReset);
     saveEditBtn.addEventListener('click', saveTaskName);
     cancelEditBtn.addEventListener('click', cancelEdit);
     closeReportBtn.addEventListener('click', closeReport);
@@ -145,17 +145,36 @@ function setupEventListeners() {
     });
 
     resetAllBtn.addEventListener('click', () => resetAllModal.style.display = 'flex');
-    document.querySelector('#reset-all-modal .confirm') ?.addEventListener('click', confirmResetAll);
-    document.querySelector('#reset-all-modal .cancel') ?.addEventListener('click', cancelResetAll);
+    document.querySelector('#reset-all-modal .confirm') ? .addEventListener('click', confirmResetAll);
+    document.querySelector('#reset-all-modal .cancel') ? .addEventListener('click', cancelResetAll);
 }
 
 // Initialize App
 function initializeApp() {
-    tasks = loadTasks();
-    APP_STATE.elapsedTime = tasks[APP_STATE.currentTaskIndex].time || 0;
-    setupEventListeners();
-    updateUIState();
-    initializeTheme();
+    try {
+        // تحميل البيانات أولاً
+        tasks = loadTasks();
+
+        // التأكد من وجود المهام قبل تعيين الوقت
+        if (tasks && tasks.length > 0) {
+            APP_STATE.elapsedTime = tasks[APP_STATE.currentTaskIndex] ? .time || 0;
+        } else {
+            // إذا لم تكن هناك مهام، نقوم بتهيئة المهام الافتراضية
+            tasks = [...defaultTasks];
+            APP_STATE.elapsedTime = 0;
+        }
+
+        // تحديث الواجهة وإضافة event listeners
+        updateUIState();
+        setupEventListeners();
+        initializeTheme();
+    } catch (error) {
+        console.error('Error in initializeApp:', error);
+        // في حالة حدوث خطأ، نستخدم القيم الافتراضية
+        tasks = [...defaultTasks];
+        APP_STATE.elapsedTime = 0;
+        updateUIState();
+    }
 }
 
 // Start App
@@ -508,8 +527,8 @@ function addEventListeners() {
     themeToggleBtn.addEventListener('click', toggleTheme);
 
     // Modal buttons
-    document.querySelector('.confirm') ?.addEventListener('click', confirmReset);
-    document.querySelector('.cancel') ?.addEventListener('click', cancelReset);
+    document.querySelector('.confirm') ? .addEventListener('click', confirmReset);
+    document.querySelector('.cancel') ? .addEventListener('click', cancelReset);
     saveEditBtn.addEventListener('click', saveTaskName);
     cancelEditBtn.addEventListener('click', cancelEdit);
     closeReportBtn.addEventListener('click', closeReport);
@@ -521,6 +540,6 @@ function addEventListeners() {
 
     // Reset all
     resetAllBtn.addEventListener('click', () => resetAllModal.style.display = 'flex');
-    document.querySelector('#reset-all-modal .confirm') ?.addEventListener('click', confirmResetAll);
-    document.querySelector('#reset-all-modal .cancel') ?.addEventListener('click', cancelResetAll);
+    document.querySelector('#reset-all-modal .confirm') ? .addEventListener('click', confirmResetAll);
+    document.querySelector('#reset-all-modal .cancel') ? .addEventListener('click', cancelResetAll);
 }
