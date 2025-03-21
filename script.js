@@ -344,16 +344,14 @@ switchTask(0);
 
 // إضافة دوال جديدة للتخزين والاسترجاع
 function saveTasks() {
-    const saveData = {
-        tasks: tasks,
-        timestamp: new Date().getTime(),
-        version: '1.0'
-    };
     try {
+        const saveData = {
+            tasks,
+            timestamp: Date.now()
+        };
         localStorage.setItem('tasks', JSON.stringify(saveData));
-        localStorage.setItem('lastSave', new Date().getTime());
-    } catch (e) {
-        console.error('Error saving to localStorage:', e);
+    } catch (error) {
+        console.error('Error saving tasks:', error);
     }
 }
 
@@ -372,72 +370,37 @@ function saveBackup() {
 
 function loadTasks() {
     try {
-        // محاولة تحميل البيانات الرئيسية
         const savedData = localStorage.getItem('tasks');
-        const backupData = localStorage.getItem('tasks_backup');
-
         if (savedData) {
             const parsed = JSON.parse(savedData);
-            if (parsed.tasks && parsed.timestamp) {
+            if (parsed.tasks) {
                 tasks = parsed.tasks;
                 return true;
             }
         }
-
-        // محاولة استخدام النسخة الاحتياطية إذا فشل التحميل الرئيسي
-        if (backupData) {
-            const parsedBackup = JSON.parse(backupData);
-            if (parsedBackup.tasks && parsedBackup.timestamp) {
-                tasks = parsedBackup.tasks;
-                return true;
-            }
-        }
-
-        // استخدام البيانات الافتراضية إذا فشل كل شيء
-        tasks = defaultTasks;
+        tasks = defaultTasks.map(task => ({...task }));
         return false;
-    } catch (e) {
-        console.error('Error loading tasks:', e);
-        tasks = defaultTasks;
+    } catch (error) {
+        console.error('Error loading tasks:', error);
+        tasks = defaultTasks.map(task => ({...task }));
         return false;
     }
 }
 
-// تعديل التهيئة الأولية للتطبيق في بداية الملف
-document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
-});
-
-// إضافة دالة جديدة للتهيئة
+// تحسين دالة التهيئة
 function initializeApp() {
-    try {
-        loadTasks();
-        setupEventListeners();
-        switchTask(0);
+    // تحميل البيانات
+    loadTasks();
 
-        // التأكد من تحديث الواجهة
-        updateUIState();
+    // إعداد event listeners
+    setupEventListeners();
 
-        // إضافة مراقب للتركيز على النافذة
-        window.addEventListener('focus', function() {
-            loadTasks();
-            updateUIState();
-        });
-
-        // إضافة مراقب للتغييرات في localStorage
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'tasks') {
-                loadTasks();
-                updateUIState();
-            }
-        });
-    } catch (e) {
-        console.error('Error initializing app:', e);
-        // استعادة الحالة الافتراضية في حالة الخطأ
-        tasks = defaultTasks;
-        updateUIState();
-    }
+    // تحديث الواجهة
+    updateUIState();
 }
+
+// انتظار تحميل DOM بالكامل
+document.addEventListener('DOMContentLoaded', initializeApp);
 
 // إضافة دالة جديدة لتحديث حالة الواجهة
 function updateUIState() {
@@ -483,37 +446,32 @@ function setupEventListeners() {
 
 // دالة إعادة تعيين كل المهام
 function resetAllTasks() {
+    // حفظ الثيم الحالي
+    const currentTheme = localStorage.getItem('theme');
+
+    // مسح كل البيانات من localStorage
+    localStorage.clear();
+
+    // إعادة تعيين الثيم
+    if (currentTheme) {
+        localStorage.setItem('theme', currentTheme);
+    }
+
+    // إعادة تعيين المهام للوضع الافتراضي
+    tasks = defaultTasks.map(task => ({...task }));
+
     // إيقاف الستوب واتش إذا كان يعمل
     if (isRunning) {
         clearInterval(interval);
         isRunning = false;
     }
 
-    // إعادة تعيين المهام للوضع الافتراضي
-    tasks = [
-        { name: 'Task 1', time: 0, startTime: null, endTime: null, done: false, isRunning: false },
-        { name: 'Task 2', time: 0, startTime: null, endTime: null, done: false, isRunning: false },
-        { name: 'Task 3', time: 0, startTime: null, endTime: null, done: false, isRunning: false },
-        { name: 'Task 4', time: 0, startTime: null, endTime: null, done: false, isRunning: false },
-        { name: 'Task 5', time: 0, startTime: null, endTime: null, done: false, isRunning: false }
-    ];
-
-    // تحديث localStorage
-    saveTasks();
-
-    // إعادة تعيين الواجهة
+    // إعادة تعيين الحالة
     elapsedTime = 0;
-    updateStopwatch();
-    startPauseBtn.textContent = 'Start';
-    doneBtn.classList.remove('hidden');
+    currentTaskIndex = 0;
 
-    // تحديث أسماء المهام في الشريط الجانبي
-    taskTabs.forEach((tab, index) => {
-        tab.textContent = tasks[index].name;
-    });
-
-    // تحديث المهمة الحالية
-    taskName.textContent = tasks[currentTaskIndex].name;
+    // تحديث الواجهة
+    updateUIState();
 
     // إغلاق Modal
     resetAllModal.style.display = 'none';
@@ -530,4 +488,11 @@ function cancelResetAll() {
 // إضافة Event Listener للزر
 resetAllBtn.addEventListener('click', () => {
     resetAllModal.style.display = 'flex';
+});
+
+window.addEventListener('storage', function(e) {
+    if (e.key === 'tasks') {
+        loadTasks();
+        updateUIState();
+    }
 });
