@@ -50,8 +50,8 @@
                 <div class="modal-content">
                     <h3>هل أنت متأكد من إعادة التعيين؟</h3>
                     <div class="modal-buttons">
-                        <button class="confirm">✅</button>
-                        <button class="cancel">❌</button>
+                        <button class="confirm" onclick="confirmReset()">✅</button>
+                        <button class="cancel" onclick="cancelReset()">❌</button>
                     </div>
                 </div>
             </div>
@@ -83,9 +83,10 @@
             <div class="modal" id="reset-all-modal">
                 <div class="modal-content">
                     <h3>هل أنت متأكد من إعادة تعيين كل المهام؟</h3>
+                    <p>سيتم مسح جميع الأوقات وإعادة أسماء المهام للوضع الافتراضي</p>
                     <div class="modal-buttons">
-                        <button class="confirm">✅</button>
-                        <button class="cancel">❌</button>
+                        <button class="confirm" onclick="confirmResetAll()">✅</button>
+                        <button class="cancel" onclick="cancelResetAll()">❌</button>
                     </div>
                 </div>
             </div>
@@ -95,7 +96,7 @@
     <!-- Animation Elements -->
     <div id="celebration-animation"></div>
 
-    <script src="script.js" defer></script>
+    <script src="script.js"></script>
 </body>
 
 </html>
