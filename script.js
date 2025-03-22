@@ -51,26 +51,83 @@ function updateStopwatch() {
     stopwatch.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-// دالة للتحقق من صحة المهام وإعادة تهيئتها إذا كانت غير صالحة
-function validateAndFixTasks() {
+// تحديث دالة حفظ المهام
+function saveTasks() {
     try {
+        // التحقق من صحة البيانات قبل الحفظ
         if (!Array.isArray(tasks) || tasks.length === 0) {
+            console.warn('بيانات غير صالحة، جاري استعادة البيانات الافتراضية');
             tasks = JSON.parse(JSON.stringify(defaultTasks));
-            saveTasks();
         }
 
         // التأكد من أن كل مهمة تحتوي على جميع الخصائص المطلوبة
         tasks = tasks.map((task, index) => ({
             name: task.name || `Task ${index + 1}`,
-            time: task.time || 0,
+            time: typeof task.time === 'number' ? task.time : 0,
             startTime: task.startTime || null,
             endTime: task.endTime || null,
-            done: task.done || false
+            done: Boolean(task.done)
         }));
+
+        // حفظ البيانات
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+
+        // حفظ نسخة احتياطية
+        localStorage.setItem('tasks_backup', JSON.stringify(tasks));
+    } catch (error) {
+        console.error('خطأ في حفظ البيانات:', error);
+        // محاولة استعادة النسخة الاحتياطية
+        const backup = localStorage.getItem('tasks_backup');
+        if (backup) {
+            tasks = JSON.parse(backup);
+        }
+    }
+}
+
+// تحديث دالة التحقق من صحة المهام
+function validateAndFixTasks() {
+    try {
+        // محاولة استعادة البيانات الأساسية
+        let storedTasks = localStorage.getItem('tasks');
+
+        // إذا لم تكن هناك بيانات، نحاول استعادة النسخة الاحتياطية
+        if (!storedTasks) {
+            storedTasks = localStorage.getItem('tasks_backup');
+        }
+
+        if (storedTasks) {
+            tasks = JSON.parse(storedTasks);
+        }
+
+        // التحقق من صحة البيانات
+        if (!Array.isArray(tasks) || tasks.length === 0) {
+            throw new Error('بيانات غير صالحة');
+        }
+
+        // التحقق من كل مهمة
+        tasks = tasks.map((task, index) => {
+            if (!task || typeof task !== 'object') {
+                return {
+                    name: `Task ${index + 1}`,
+                    time: 0,
+                    startTime: null,
+                    endTime: null,
+                    done: false
+                };
+            }
+
+            return {
+                name: task.name || `Task ${index + 1}`,
+                time: typeof task.time === 'number' ? task.time : 0,
+                startTime: task.startTime || null,
+                endTime: task.endTime || null,
+                done: Boolean(task.done)
+            };
+        });
 
         saveTasks();
     } catch (error) {
-        console.warn('تم اكتشاف خطأ في البيانات، جاري إعادة التهيئة...');
+        console.warn('تم اكتشاف خطأ في البيانات، جاري إعادة التهيئة...', error);
         tasks = JSON.parse(JSON.stringify(defaultTasks));
         saveTasks();
     }
@@ -111,15 +168,6 @@ function switchTask(index) {
     reportModal.style.display = 'none';
 }
 
-// تحديث دالة حفظ المهام
-function saveTasks() {
-    try {
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-    } catch (error) {
-        console.error('خطأ في حفظ البيانات:', error);
-    }
-}
-
 // تحديث دالة تشغيل/إيقاف الساعة
 function toggleStopwatch() {
     validateAndFixTasks();
@@ -154,9 +202,8 @@ function markTaskDone() {
         startPauseBtn.textContent = 'Start';
     }
     tasks[currentTaskIndex].endTime = new Date().toLocaleTimeString('ar-EG');
-    tasks[currentTaskIndex].time += elapsedTime;
     tasks[currentTaskIndex].done = true;
-    saveTasks(); // حفظ البيانات
+    saveTasks();
     celebrate();
 }
 
@@ -370,16 +417,16 @@ taskTabs.forEach((tab, index) => {
 
 // تهيئة التطبيق
 window.addEventListener('load', () => {
-    try {
-        tasks = JSON.parse(localStorage.getItem('tasks')) || defaultTasks;
-        validateAndFixTasks();
-        switchTask(0);
-    } catch (error) {
-        console.error('خطأ في تحميل البيانات:', error);
-        tasks = JSON.parse(JSON.stringify(defaultTasks));
+    validateAndFixTasks();
+    switchTask(0);
+
+    // إضافة مستمع لحفظ البيانات قبل إغلاق الصفحة
+    window.addEventListener('beforeunload', () => {
+        if (isRunning) {
+            tasks[currentTaskIndex].time = elapsedTime;
+        }
         saveTasks();
-        switchTask(0);
-    }
+    });
 });
 
 // دالة إعادة تعيين كل المهام
